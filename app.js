@@ -515,9 +515,7 @@ function initSupabaseAdmin(){
     url.includes("YOUR_SUPABASE") ||
     key.includes("YOUR_SUPABASE")
   ){
-    console.warn(
-      "Supabase is not configured yet."
-    );
+  
 
     return;
   }
