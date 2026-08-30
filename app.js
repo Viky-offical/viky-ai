@@ -1,572 +1,1480 @@
+/* =========================================================
+   VIKY AI
+   SUPABASE + AUTH + ADMIN + DASHBOARD
+   ========================================================= */
 
-const SUPABASE_URL = "https://qhcjicfxolurbjnvobur.supabase.co";
-const SUPABASE_KEY = "sb_publishable_D6EylVAso_ihWIS33ObsYg_onCINCKo";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+/* =========================================================
+   SUPABASE CONFIG
+   ========================================================= */
 
-const authScreen = document.querySelector("#authScreen");
-const authTitle = document.querySelector("#authTitle");
-const authSubtitle = document.querySelector("#authSubtitle");
-const authName = document.querySelector("#authName");
-const authEmail = document.querySelector("#authEmail");
-const authPassword = document.querySelector("#authPassword");
-const authButton = document.querySelector("#authButton");
-const authSwitch = document.querySelector("#authSwitch");
-const authSwitchText = document.querySelector("#authSwitchText");
-const forgotPassword = document.querySelector("#forgotPassword");
-const authMessage = document.querySelector("#authMessage");
+const SUPABASE_URL =
+  "https://qhcjicfxolurbjnvobur.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_D6EylVAso_ihWIS33ObsYg_onCINCKo";
+
+
+/* =========================================================
+   SUPABASE CLIENT
+   ONLY ONE CLIENT
+   ========================================================= */
+
+let supabaseClient = null;
+
+if (
+  window.supabase &&
+  typeof window.supabase.createClient === "function"
+) {
+  supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+} else {
+  console.error(
+    "Supabase library was not loaded."
+  );
+}
+
+
+/* =========================================================
+   GLOBAL USER / ADMIN STATE
+   ========================================================= */
+
+let currentUser = null;
+let isAdmin = false;
+
+
+/* =========================================================
+   AUTH ELEMENTS
+   ========================================================= */
+
+const authScreen =
+  document.querySelector("#authScreen");
+
+const authTitle =
+  document.querySelector("#authTitle");
+
+const authSubtitle =
+  document.querySelector("#authSubtitle");
+
+const authName =
+  document.querySelector("#authName");
+
+const authEmail =
+  document.querySelector("#authEmail");
+
+const authPassword =
+  document.querySelector("#authPassword");
+
+const authButton =
+  document.querySelector("#authButton");
+
+const authSwitch =
+  document.querySelector("#authSwitch");
+
+const authSwitchText =
+  document.querySelector("#authSwitchText");
+
+const forgotPassword =
+  document.querySelector("#forgotPassword");
+
+const authMessage =
+  document.querySelector("#authMessage");
+
+
+/* =========================================================
+   AUTH MODE
+   ========================================================= */
 
 let signupMode = false;
 
-function showAuthMessage(message, error = false) {
+
+/* =========================================================
+   AUTH MESSAGE
+   ========================================================= */
+
+function showAuthMessage(
+  message,
+  error = false
+) {
+  if (!authMessage) {
+    return;
+  }
+
   authMessage.textContent = message;
-  authMessage.style.color = error ? "#ff5c5c" : "#22c55e";
+
+  authMessage.style.color =
+    error
+      ? "#ff5c5c"
+      : "#22c55e";
 }
 
-authSwitch.addEventListener("click", () => {
-  signupMode = !signupMode;
 
-  if (signupMode) {
-    authTitle.textContent = "Create your account";
-    authSubtitle.textContent = "Join Viky AI and start creating";
-    authName.style.display = "block";
-    authButton.textContent = "Create Account";
-    authSwitchText.textContent = "Already have an account?";
-    authSwitch.textContent = "Sign In";
-    forgotPassword.style.display = "none";
-  } else {
-    authTitle.textContent = "Welcome to Viky AI";
-    authSubtitle.textContent = "Sign in to continue";
-    authName.style.display = "none";
-    authButton.textContent = "Sign In";
-    authSwitchText.textContent = "Don't have an account?";
-    authSwitch.textContent = "Create Account";
-    forgotPassword.style.display = "block";
-  }
+/* =========================================================
+   LOGIN / SIGNUP SWITCH
+   ========================================================= */
 
-  showAuthMessage("");
-});
+authSwitch?.addEventListener(
+  "click",
+  () => {
 
-authButton.addEventListener("click", async () => {
-  const email = authEmail.value.trim();
-  const password = authPassword.value;
-  const name = authName.value.trim();
+    signupMode = !signupMode;
 
-  if (!email || !password) {
-    showAuthMessage("Please enter email and password.", true);
-    return;
-  }
-
-  if (signupMode && !name) {
-    showAuthMessage("Please enter your name.", true);
-    return;
-  }
-
-  authButton.disabled = true;
-  showAuthMessage("Please wait...");
-
-  try {
     if (signupMode) {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name
-          }
-        }
-      });
 
-      if (error) throw error;
-
-      if (data.session) {
-        showAuthMessage("Account created successfully!");
-        await showApp();
-      } else {
-        showAuthMessage(
-          "Account created! Check your email to verify your account."
-        );
+      if (authTitle) {
+        authTitle.textContent =
+          "Create your account";
       }
+
+      if (authSubtitle) {
+        authSubtitle.textContent =
+          "Join Viky AI and start creating";
+      }
+
+      if (authName) {
+        authName.style.display = "block";
+      }
+
+      if (authButton) {
+        authButton.textContent =
+          "Create Account";
+      }
+
+      if (authSwitchText) {
+        authSwitchText.textContent =
+          "Already have an account?";
+      }
+
+      authSwitch.textContent =
+        "Sign In";
+
+      if (forgotPassword) {
+        forgotPassword.style.display =
+          "none";
+      }
+
     } else {
-      const { error } =
-        await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
 
-      if (error) throw error;
+      if (authTitle) {
+        authTitle.textContent =
+          "Welcome to Viky AI";
+      }
 
-      showAuthMessage("Login successful!");
-      await showApp();
+      if (authSubtitle) {
+        authSubtitle.textContent =
+          "Sign in to continue";
+      }
+
+      if (authName) {
+        authName.style.display = "none";
+      }
+
+      if (authButton) {
+        authButton.textContent =
+          "Sign In";
+      }
+
+      if (authSwitchText) {
+        authSwitchText.textContent =
+          "Don't have an account?";
+      }
+
+      authSwitch.textContent =
+        "Create Account";
+
+      if (forgotPassword) {
+        forgotPassword.style.display =
+          "block";
+      }
     }
-  } catch (error) {
-    showAuthMessage(error.message, true);
+
+    showAuthMessage("");
   }
+);
 
-  authButton.disabled = false;
-});
 
-forgotPassword.addEventListener("click", async () => {
-  const email = authEmail.value.trim();
+/* =========================================================
+   LOGIN / SIGNUP BUTTON
+   ========================================================= */
 
-  if (!email) {
-    showAuthMessage("Enter your email first.", true);
-    return;
-  }
+authButton?.addEventListener(
+  "click",
+  async () => {
 
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(
-    email,
-    {
-      redirectTo: window.location.origin
+    if (!supabaseClient) {
+
+      showAuthMessage(
+        "Supabase connection is not available.",
+        true
+      );
+
+      return;
     }
-  );
 
-  if (error) {
-    showAuthMessage(error.message, true);
-  } else {
-    showAuthMessage("Password reset email sent.");
+    const email =
+      authEmail?.value.trim() || "";
+
+    const password =
+      authPassword?.value || "";
+
+    const name =
+      authName?.value.trim() || "";
+
+
+    /* -------------------------
+       VALIDATION
+       ------------------------- */
+
+    if (!email || !password) {
+
+      showAuthMessage(
+        "Please enter email and password.",
+        true
+      );
+
+      return;
+    }
+
+
+    if (signupMode && !name) {
+
+      showAuthMessage(
+        "Please enter your name.",
+        true
+      );
+
+      return;
+    }
+
+
+    /* -------------------------
+       BUTTON STATE
+       ------------------------- */
+
+    authButton.disabled = true;
+
+    showAuthMessage(
+      "Please wait..."
+    );
+
+
+    try {
+
+      /* =====================================================
+         SIGNUP
+         ===================================================== */
+
+      if (signupMode) {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+
+            options: {
+              data: {
+                full_name: name
+              }
+            }
+          });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (data?.session) {
+
+          showAuthMessage(
+            "Account created successfully!"
+          );
+
+          await showApp();
+
+          await checkAdminAccess();
+
+        } else {
+
+          showAuthMessage(
+            "Account created! Check your email to verify your account."
+          );
+        }
+
+
+      /* =====================================================
+         LOGIN
+         ===================================================== */
+
+      } else {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.auth
+            .signInWithPassword({
+              email: email,
+              password: password
+            });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        currentUser =
+          data?.user || null;
+
+
+        showAuthMessage(
+          "Login successful!"
+        );
+
+
+        await showApp();
+
+        await checkAdminAccess();
+      }
+
+
+    } catch (error) {
+
+      console.error(
+        "Authentication error:",
+        error
+      );
+
+      showAuthMessage(
+        error?.message ||
+        "Something went wrong. Please try again.",
+        true
+      );
+
+    } finally {
+
+      authButton.disabled = false;
+    }
   }
-});
+);
+
+
+/* =========================================================
+   FORGOT PASSWORD
+   ========================================================= */
+
+forgotPassword?.addEventListener(
+  "click",
+  async () => {
+
+    if (!supabaseClient) {
+
+      showAuthMessage(
+        "Supabase connection is not available.",
+        true
+      );
+
+      return;
+    }
+
+
+    const email =
+      authEmail?.value.trim() || "";
+
+
+    if (!email) {
+
+      showAuthMessage(
+        "Enter your email first.",
+        true
+      );
+
+      return;
+    }
+
+
+    try {
+
+      showAuthMessage(
+        "Sending password reset email..."
+      );
+
+
+      const {
+        error
+      } =
+        await supabaseClient.auth
+          .resetPasswordForEmail(
+            email,
+            {
+              redirectTo:
+                window.location.origin
+            }
+          );
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      showAuthMessage(
+        "Password reset email sent."
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Password reset error:",
+        error
+      );
+
+      showAuthMessage(
+        error?.message ||
+        "Unable to send password reset email.",
+        true
+      );
+    }
+  }
+);
+
+
+/* =========================================================
+   SHOW APP
+   ========================================================= */
 
 async function showApp() {
+
   if (authScreen) {
-    authScreen.style.display = "none";
+
+    authScreen.style.display =
+      "none";
   }
 
-  const { data } = await supabaseClient.auth.getUser();
 
-  if (data.user) {
-    const userName =
-      data.user.user_metadata?.full_name ||
-      data.user.email?.split("@")[0] ||
-      "Viky User";
+  if (!supabaseClient) {
+    return;
+  }
 
-    document.querySelectorAll("body *").forEach(el => {
-      if (
-        el.children.length === 0 &&
-        el.textContent.trim() === "Viky User"
-      ) {
-        el.textContent = userName;
-      }
-    });
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .getUser();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (data?.user) {
+
+      currentUser =
+        data.user;
+
+
+      const userName =
+        data.user.user_metadata
+          ?.full_name ||
+        data.user.email
+          ?.split("@")[0] ||
+        "Viky User";
+
+
+      document
+        .querySelectorAll("body *")
+        .forEach(
+          (el) => {
+
+            if (
+              el.children.length === 0 &&
+              el.textContent.trim() ===
+                "Viky User"
+            ) {
+
+              el.textContent =
+                userName;
+            }
+          }
+        );
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Could not load user:",
+      error
+    );
   }
 }
+
+
+/* =========================================================
+   SHOW LOGIN
+   ========================================================= */
+
+function showLogin() {
+
+  if (authScreen) {
+
+    authScreen.style.display =
+      "flex";
+  }
+}
+
+
+/* =========================================================
+   CHECK LOGIN SESSION
+   ========================================================= */
 
 async function checkLogin() {
-  const { data } = await supabaseClient.auth.getSession();
 
-  if (data.session) {
-    await showApp();
-  } else {
-    authScreen.style.display = "flex";
+  if (!supabaseClient) {
+
+    showLogin();
+
+    return;
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .getSession();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (data?.session) {
+
+      currentUser =
+        data.session.user;
+
+      await showApp();
+
+      await checkAdminAccess();
+
+    } else {
+
+      showLogin();
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Session check failed:",
+      error
+    );
+
+    showLogin();
   }
 }
 
-supabaseClient.auth.onAuthStateChange(async (event, session) => {
-  if (session) {
-    await showApp();
-  } else {
-    authScreen.style.display = "flex";
+
+/* =========================================================
+   AUTH STATE CHANGE
+   ========================================================= */
+
+if (supabaseClient) {
+
+  supabaseClient.auth
+    .onAuthStateChange(
+      async (
+        event,
+        session
+      ) => {
+
+        if (session) {
+
+          currentUser =
+            session.user;
+
+          await showApp();
+
+          /*
+             Delay admin check slightly so
+             Supabase auth state is settled.
+          */
+
+          setTimeout(
+            () => {
+              checkAdminAccess();
+            },
+            0
+          );
+
+        } else {
+
+          currentUser = null;
+
+          isAdmin = false;
+
+          hideAdminNav();
+
+          showLogin();
+        }
+      }
+    );
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+
+  if (!supabaseClient) {
+    return;
   }
-});
 
-checkLogin();
-let mode="text", credits=100;
 
-const $=s=>document.querySelector(s);
-const $$=s=>document.querySelectorAll(s);
+  try {
 
-const promptBox=$("#prompt");
-const counter=$("#counter");
-const upload=$("#uploadLabel");
-const uploadTitle=$("#uploadTitle");
-const input=$("#mediaInput");
-const voicePanel=$("#voicePanel");
-const moreTools=$("#moreTools");
-const moreMenu=$("#moreMenu");
-const accountPage=$("#accountPage");
+    const {
+      error
+    } =
+      await supabaseClient.auth
+        .signOut();
 
-function setMode(m){
-  mode=m;
 
-  $$(".mode").forEach(x=>
-    x.classList.toggle("active",x.dataset.mode===m)
-  );
-
-  $$(".sidebar a[data-mode]").forEach(x=>
-    x.classList.toggle("active",x.dataset.mode===m)
-  );
-
-  const needsMedia=["image","textimage","video"].includes(m);
-
-  upload?.classList.toggle("hidden",!needsMedia);
-
-  if(uploadTitle){
-    uploadTitle.textContent=m==="video"?"Upload Video":"Upload Image";
-  }
-
-  if(input){
-    input.accept=m==="video"?"video/*":"image/*";
-  }
-
-  voicePanel?.classList.toggle("hidden",m!=="voice");
-
-  if(["music","soundfx","subtitle","thumbnail","story"].includes(m)){
-    voicePanel?.classList.add("hidden");
-
-    if(promptBox){
-      promptBox.placeholder =
-        m==="music"
-        ? "Describe the music you want..."
-        : m==="soundfx"
-        ? "Describe the sound effects..."
-        : m==="subtitle"
-        ? "Paste your video/script text..."
-        : m==="thumbnail"
-        ? "Describe the thumbnail scene..."
-        : "Describe your story...";
+    if (error) {
+      throw error;
     }
-  }
 
-  if(m==="voice"){
-    promptBox.placeholder=
-      "Write your script here. Example: Welcome to Viky AI, where your ideas become videos...";
-  }
-  else if(m==="image"){
-    promptBox.placeholder=
-      "Describe the motion: camera slowly moves forward, subject moves naturally...";
-  }
-  else if(m==="textimage"){
-    promptBox.placeholder=
-      "Describe what should happen to the uploaded image...";
-  }
-  else if(!["music","soundfx","subtitle","thumbnail","story"].includes(m)){
-    promptBox.placeholder=
-      "A cinematic scene with realistic movement...";
+
+    currentUser = null;
+
+    isAdmin = false;
+
+    hideAdminNav();
+
+    showLogin();
+
+
+  } catch (error) {
+
+    console.error(
+      "Logout error:",
+      error
+    );
+
+    alert(
+      error?.message ||
+      "Logout failed."
+    );
   }
 }
 
-promptBox?.addEventListener("input",()=>{
-  if(counter){
-    counter.textContent=
-      `${promptBox.value.length} / 2000`;
-  }
-});
 
-$$(".mode,.sidebar a[data-mode]").forEach(x=>
-  x.addEventListener("click",()=>{
-    const m=x.dataset.mode;
+/*
+   This lets HTML use:
+   onclick="logout()"
+*/
 
-    if(["female","male","young","narrator"].includes(m)){
-      setMode("voice");
+window.logout = logout;
+
+
+/* =========================================================
+   BASIC DASHBOARD
+   ========================================================= */
+
+let mode = "text";
+let credits = 100;
+
+
+const $ =
+  (selector) =>
+    document.querySelector(
+      selector
+    );
+
+
+const $$ =
+  (selector) =>
+    document.querySelectorAll(
+      selector
+    );
+
+
+const promptBox =
+  $("#prompt");
+
+
+const counter =
+  $("#counter");
+
+
+const upload =
+  $("#uploadLabel");
+
+
+const uploadTitle =
+  $("#uploadTitle");
+
+
+const input =
+  $("#mediaInput");
+
+
+const voicePanel =
+  $("#voicePanel");
+
+
+const moreTools =
+  $("#moreTools");
+
+
+const moreMenu =
+  $("#moreMenu");
+
+
+const accountPage =
+  $("#accountPage");
+
+
+/* =========================================================
+   MODE
+   ========================================================= */
+
+function setMode(m) {
+
+  mode = m;
+
+
+  $$(".mode").forEach(
+    (element) => {
+
+      element.classList.toggle(
+        "active",
+        element.dataset.mode === m
+      );
     }
-    else if([
+  );
+
+
+  $$(".sidebar a[data-mode]")
+    .forEach(
+      (element) => {
+
+        element.classList.toggle(
+          "active",
+          element.dataset.mode === m
+        );
+      }
+    );
+
+
+  const needsMedia =
+    [
+      "image",
+      "textimage",
+      "video"
+    ].includes(m);
+
+
+  upload?.classList.toggle(
+    "hidden",
+    !needsMedia
+  );
+
+
+  if (uploadTitle) {
+
+    uploadTitle.textContent =
+      m === "video"
+        ? "Upload Video"
+        : "Upload Image";
+  }
+
+
+  if (input) {
+
+    input.accept =
+      m === "video"
+        ? "video/*"
+        : "image/*";
+  }
+
+
+  voicePanel?.classList.toggle(
+    "hidden",
+    m !== "voice"
+  );
+
+
+  if (
+    [
       "music",
       "soundfx",
       "subtitle",
       "thumbnail",
-      "story",
-      "videos",
-      "templates",
-      "favorites"
-    ].includes(m)){
-      setMode(m);
+      "story"
+    ].includes(m)
+  ) {
+
+    voicePanel?.classList.add(
+      "hidden"
+    );
+
+
+    if (promptBox) {
+
+      promptBox.placeholder =
+        m === "music"
+          ? "Describe the music you want..."
+          : m === "soundfx"
+          ? "Describe the sound effects..."
+          : m === "subtitle"
+          ? "Paste your video/script text..."
+          : m === "thumbnail"
+          ? "Describe the thumbnail scene..."
+          : "Describe your story...";
     }
-    else{
-      setMode(m);
-    }
-
-    if(
-      moreMenu &&
-      !moreMenu.classList.contains("hidden") &&
-      m!=="more"
-    ){
-      moreMenu.classList.add("hidden");
-    }
-  })
-);
-
-moreTools?.addEventListener("click",()=>{
-  moreMenu?.classList.toggle("hidden");
-
-  const b=moreTools?.querySelector("b");
-
-  if(b){
-    b.textContent=
-      moreMenu?.classList.contains("hidden")
-      ?"⌄"
-      :"⌃";
   }
-});
 
-$$("[data-page]").forEach(x=>
-  x.addEventListener("click",()=>{
-    const p=x.dataset.page;
 
-    if(p==="dashboard"){
-      return showDashboard();
-    }
+  if (m === "voice") {
 
-    if(p==="admin"){
-      return showAdminPage();
-    }
+    promptBox.placeholder =
+      "Write your script here. Example: Welcome to Viky AI, where your ideas become videos...";
 
-    showAccount(p);
-  })
-);
+  } else if (m === "image") {
 
-$("#backDashboard")?.addEventListener("click",showDashboard);
+    promptBox.placeholder =
+      "Describe the motion: camera slowly moves forward, subject moves naturally...";
 
-function showAccount(p){
-  accountPage?.classList.remove("hidden");
+  } else if (m === "textimage") {
 
-  document.querySelector(".content")?.classList.add("hidden");
+    promptBox.placeholder =
+      "Describe what should happen to the uploaded image...";
 
-  ["profile","subscription","settings"].forEach(x=>{
-    $("#"+x+"Page")?.classList.add("hidden");
-  });
+  } else if (
+    ![
+      "music",
+      "soundfx",
+      "subtitle",
+      "thumbnail",
+      "story"
+    ].includes(m)
+  ) {
 
-  $("#"+p+"Page")?.classList.remove("hidden");
-
-  const title=$("#accountTitle");
-
-  if(title){
-    title.textContent=
-      p[0].toUpperCase()+p.slice(1);
+    promptBox.placeholder =
+      "A cinematic scene with realistic movement...";
   }
 }
 
-function showDashboard(){
-  accountPage?.classList.add("hidden");
 
-  $("#adminPage")?.classList.add("hidden");
+/* =========================================================
+   PROMPT COUNTER
+   ========================================================= */
 
-  document.querySelector(".content")?.classList.remove("hidden");
+promptBox?.addEventListener(
+  "input",
+  () => {
+
+    if (counter) {
+
+      counter.textContent =
+        `${promptBox.value.length} / 2000`;
+    }
+  }
+);
+
+
+/* =========================================================
+   MODE BUTTONS
+   ========================================================= */
+
+$$(
+  ".mode,.sidebar a[data-mode]"
+).forEach(
+  (element) => {
+
+    element.addEventListener(
+      "click",
+      () => {
+
+        const m =
+          element.dataset.mode;
+
+
+        if (
+          [
+            "female",
+            "male",
+            "young",
+            "narrator"
+          ].includes(m)
+        ) {
+
+          setMode("voice");
+
+        } else {
+
+          setMode(m);
+        }
+
+
+        if (
+          moreMenu &&
+          !moreMenu.classList.contains(
+            "hidden"
+          ) &&
+          m !== "more"
+        ) {
+
+          moreMenu.classList.add(
+            "hidden"
+          );
+        }
+      }
+    );
+  }
+);
+
+
+/* =========================================================
+   MORE MENU
+   ========================================================= */
+
+moreTools?.addEventListener(
+  "click",
+  () => {
+
+    moreMenu?.classList.toggle(
+      "hidden"
+    );
+
+
+    const button =
+      moreTools?.querySelector("b");
+
+
+    if (button) {
+
+      button.textContent =
+        moreMenu?.classList.contains(
+          "hidden"
+        )
+          ? "⌄"
+          : "⌃";
+    }
+  }
+);
+
+
+/* =========================================================
+   ACCOUNT / ADMIN NAVIGATION
+   ========================================================= */
+
+$$("[data-page]").forEach(
+  (element) => {
+
+    element.addEventListener(
+      "click",
+      () => {
+
+        const page =
+          element.dataset.page;
+
+
+        if (page === "dashboard") {
+
+          showDashboard();
+
+          return;
+        }
+
+
+        if (page === "admin") {
+
+          showAdminPage();
+
+          return;
+        }
+
+
+        showAccount(page);
+      }
+    );
+  }
+);
+
+
+/* =========================================================
+   BACK DASHBOARD
+   ========================================================= */
+
+$("#backDashboard")
+  ?.addEventListener(
+    "click",
+    showDashboard
+  );
+
+
+/* =========================================================
+   ACCOUNT PAGE
+   ========================================================= */
+
+function showAccount(page) {
+
+  accountPage?.classList.remove(
+    "hidden"
+  );
+
+
+  $(".content")?.classList.add(
+    "hidden"
+  );
+
+
+  [
+    "profile",
+    "subscription",
+    "settings"
+  ].forEach(
+    (pageName) => {
+
+      $(
+        `#${pageName}Page`
+      )?.classList.add(
+        "hidden"
+      );
+    }
+  );
+
+
+  $(
+    `#${page}Page`
+  )?.classList.remove(
+    "hidden"
+  );
+
+
+  const title =
+    $("#accountTitle");
+
+
+  if (title) {
+
+    title.textContent =
+      page.charAt(0).toUpperCase() +
+      page.slice(1);
+  }
 }
 
-$$(".choices button").forEach(b=>
-  b.addEventListener("click",()=>{
-    b.parentElement
-      .querySelectorAll("button")
-      .forEach(x=>x.classList.remove("selected"));
 
-    b.classList.add("selected");
-  })
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function showDashboard() {
+
+  accountPage?.classList.add(
+    "hidden"
+  );
+
+
+  $("#adminPage")?.classList.add(
+    "hidden"
+  );
+
+
+  $(".content")?.classList.remove(
+    "hidden"
+  );
+}
+
+
+/* =========================================================
+   CHOICES
+   ========================================================= */
+
+$$(".choices button").forEach(
+  (button) => {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        button.parentElement
+          ?.querySelectorAll(
+            "button"
+          )
+          .forEach(
+            (item) => {
+
+              item.classList.remove(
+                "selected"
+              );
+            }
+          );
+
+
+        button.classList.add(
+          "selected"
+        );
+      }
+    );
+  }
 );
 
-$$(".voice-choice").forEach(b=>
-  b.addEventListener("click",()=>{
-    $$(".voice-choice").forEach(x=>
-      x.classList.remove("selected")
-    );
 
-    b.classList.add("selected");
-  })
+/* =========================================================
+   VOICE CHOICES
+   ========================================================= */
+
+$$(".voice-choice").forEach(
+  (button) => {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        $$(".voice-choice")
+          .forEach(
+            (item) => {
+
+              item.classList.remove(
+                "selected"
+              );
+            }
+          );
+
+
+        button.classList.add(
+          "selected"
+        );
+      }
+    );
+  }
 );
 
-input?.addEventListener("change",()=>{
-  if(input.files[0]){
-    upload.querySelector("small").textContent=
-      `Selected: ${input.files[0].name}`;
+
+/* =========================================================
+   FILE UPLOAD
+   ========================================================= */
+
+input?.addEventListener(
+  "change",
+  () => {
+
+    if (
+      input.files &&
+      input.files[0]
+    ) {
+
+      const small =
+        upload?.querySelector(
+          "small"
+        );
+
+
+      if (small) {
+
+        small.textContent =
+          `Selected: ${input.files[0].name}`;
+      }
+    }
   }
-});
+);
 
-$("#generate")?.addEventListener("click",()=>{
-  const cost=
-    mode==="voice"
-    ?10
-    :mode==="music"
-    ?8
-    :mode==="soundfx"
-    ?5
-    :mode==="subtitle"
-    ?5
-    :mode==="thumbnail"
-    ?5
-    :20;
 
-  if(credits<cost){
-    alert(
-      `Not enough credits. This action needs ${cost} credits.`
-    );
+/* =========================================================
+   GENERATE
+   ========================================================= */
 
-    scrollToPricing();
-    return;
-  }
+$("#generate")
+  ?.addEventListener(
+    "click",
+    () => {
 
-  if(
-    ["image","textimage","video"].includes(mode) &&
-    !input.files.length
-  ){
-    alert(
-      "Please upload the required image/video first."
-    );
+      const cost =
+        mode === "voice"
+          ? 10
+          : mode === "music"
+          ? 8
+          : mode === "soundfx"
+          ? 5
+          : mode === "subtitle"
+          ? 5
+          : mode === "thumbnail"
+          ? 5
+          : 20;
 
-    return;
-  }
 
-  if(!promptBox.value.trim()){
-    alert(
-      mode==="voice"
-      ?"Please enter your voice-over script."
-      :"Please enter a prompt."
-    );
+      if (credits < cost) {
 
-    return;
-  }
+        alert(
+          `Not enough credits. This action needs ${cost} credits.`
+        );
 
-  credits-=cost;
 
-  if($("#creditCount")){
-    $("#creditCount").textContent=credits;
-  }
+        scrollToPricing();
 
-  const btn=$("#generate");
-
-  btn.disabled=true;
-
-  btn.innerHTML=
-    mode==="voice"
-    ?"⏳ CREATING VOICE…"
-    :"⏳ GENERATING VIDEO…";
-
-  setTimeout(()=>{
-    btn.disabled=false;
-
-    btn.innerHTML=
-      `⚡ GENERATE ${
-        mode==="voice"?"VOICE":"VIDEO"
-      } <span>${cost} credits</span>`;
-
-    const list=$("#recentList");
-
-    if(list){
-      if(list.querySelector(".empty")){
-        list.innerHTML="";
+        return;
       }
 
-      const item=document.createElement("div");
 
-      item.className="video-item";
+      if (
+        [
+          "image",
+          "textimage",
+          "video"
+        ].includes(mode) &&
+        !input?.files?.length
+      ) {
 
-      const label=
-        mode==="voice"
-        ?"AI Voice Over"
-        :mode==="music"
-        ?"AI Music"
-        :mode==="soundfx"
-        ?"Sound Effects"
-        :mode==="subtitle"
-        ?"AI Subtitles"
-        :mode==="thumbnail"
-        ?"AI Thumbnail"
-        :mode==="story"
-        ?"AI Story Video"
-        :"AI Video";
+        alert(
+          "Please upload the required image/video first."
+        );
 
-      item.innerHTML=`
-        <div class="thumb"></div>
-        <div>
-          <b>${label}</b>
-          <small>✓ Demo complete • ${cost} credits</small>
-        </div>
-      `;
+        return;
+      }
 
-      list.prepend(item);
+
+      if (
+        !promptBox?.value.trim()
+      ) {
+
+        alert(
+          mode === "voice"
+            ? "Please enter your voice-over script."
+            : "Please enter a prompt."
+        );
+
+        return;
+      }
+
+
+      credits -= cost;
+
+
+      if ($("#creditCount")) {
+
+        $("#creditCount")
+          .textContent =
+          credits;
+      }
+
+
+      const button =
+        $("#generate");
+
+
+      if (!button) {
+        return;
+      }
+
+
+      button.disabled = true;
+
+
+      button.innerHTML =
+        mode === "voice"
+          ? "⏳ CREATING VOICE…"
+          : "⏳ GENERATING VIDEO…";
+
+
+      setTimeout(
+        () => {
+
+          button.disabled =
+            false;
+
+
+          button.innerHTML =
+            `⚡ GENERATE ${
+              mode === "voice"
+                ? "VOICE"
+                : "VIDEO"
+            } <span>${cost} credits</span>`;
+
+
+          const list =
+            $("#recentList");
+
+
+          if (list) {
+
+            if (
+              list.querySelector(
+                ".empty"
+              )
+            ) {
+
+              list.innerHTML = "";
+            }
+
+
+            const item =
+              document.createElement(
+                "div"
+              );
+
+
+            item.className =
+              "video-item";
+
+
+            const label =
+              mode === "voice"
+                ? "AI Voice Over"
+                : mode === "music"
+                ? "AI Music"
+                : mode === "soundfx"
+                ? "Sound Effects"
+                : mode === "subtitle"
+                ? "AI Subtitles"
+                : mode === "thumbnail"
+                ? "AI Thumbnail"
+                : mode === "story"
+                ? "AI Story Video"
+                : "AI Video";
+
+
+            item.innerHTML = `
+              <div class="thumb"></div>
+              <div>
+                <b>${label}</b>
+                <small>✓ Demo complete • ${cost} credits</small>
+              </div>
+            `;
+
+
+            list.prepend(
+              item
+            );
+          }
+
+        },
+        1800
+      );
     }
-  },1800);
-});
+  );
 
-function scrollToPricing(){
-  document
-    .querySelector("#pricing")
+
+/* =========================================================
+   PRICING
+   ========================================================= */
+
+function scrollToPricing() {
+
+  $("#pricing")
     ?.scrollIntoView({
-      behavior:"smooth"
+      behavior: "smooth"
     });
 }
 
-function buy(plan){
+
+window.scrollToPricing =
+  scrollToPricing;
+
+
+/* =========================================================
+   BUY PLAN
+   ========================================================= */
+
+function buy(plan) {
+
   alert(
     `${plan} selected. Payment gateway will be connected in the backend step.`
   );
 }
 
-window.scrollToPricing=scrollToPricing;
+
+window.buy = buy;
 
 
-/* =========================================
-   SUPABASE ADMIN DASHBOARD
-   ========================================= */
+/* =========================================================
+   ADMIN ACCESS
+   ========================================================= */
 
+async function checkAdminAccess() {
 
-let currentUser=null;
-let isAdmin=false;
+  if (!supabaseClient) {
 
-function initSupabaseAdmin(){
-
-  const url=window.VIKY_SUPABASE_URL;
-  const key=window.VIKY_SUPABASE_ANON_KEY;
-
-  if(
-    !url ||
-    !key ||
-    url.includes("YOUR_SUPABASE") ||
-    key.includes("YOUR_SUPABASE")
-  ){
-  
+    hideAdminNav();
 
     return;
   }
 
-  if(window.supabase?.createClient){
 
-    supabaseClient=
-      window.supabase.createClient(
-        url,
-        key
-      );
-
-    checkAdminAccess();
-  }
-}
-
-async function checkAdminAccess(){
-
-  if(!supabaseClient){
-    return;
-  }
-
-  try{
+  try {
 
     const {
-      data:{user},
-      error:userError
-    }=
-      await supabaseClient.auth.getUser();
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .getUser();
 
-    if(userError || !user){
+
+    if (error) {
+      throw error;
+    }
+
+
+    const user =
+      data?.user;
+
+
+    if (!user) {
+
+      currentUser = null;
+
+      isAdmin = false;
 
       hideAdminNav();
 
       return;
     }
 
-    currentUser=user;
+
+    currentUser =
+      user;
+
+
+    /* =====================================================
+       CHECK USER ROLE
+       ===================================================== */
 
     const {
-      data:roleRow,
-      error:roleError
-    }=
+      data: roleRow,
+      error: roleError
+    } =
       await supabaseClient
         .from("user_roles")
         .select("role")
-        .eq("user_id",user.id)
+        .eq(
+          "user_id",
+          user.id
+        )
         .maybeSingle();
 
-    if(roleError){
+
+    if (roleError) {
 
       console.error(
         "Admin role check failed:",
@@ -578,55 +1486,81 @@ async function checkAdminAccess(){
       return;
     }
 
-    isAdmin=
-      roleRow?.role==="admin";
 
-    if(isAdmin){
+    isAdmin =
+      roleRow?.role === "admin";
+
+
+    if (isAdmin) {
 
       $("#adminNav")
-        ?.classList.remove("hidden");
+        ?.classList.remove(
+          "hidden"
+        );
 
-      if($("#adminRole")){
-        $("#adminRole").textContent="admin";
+
+      if ($("#adminRole")) {
+
+        $("#adminRole")
+          .textContent =
+          "admin";
       }
 
-      if($("#adminStatus")){
-        $("#adminStatus").textContent=
+
+      if ($("#adminStatus")) {
+
+        $("#adminStatus")
+          .textContent =
           "✓ Authorized";
       }
 
-      if($("#adminEmail")){
-        $("#adminEmail").textContent=
+
+      if ($("#adminEmail")) {
+
+        $("#adminEmail")
+          .textContent =
           user.email || "—";
       }
 
-    }
-    else{
+
+    } else {
 
       hideAdminNav();
-
     }
 
-  }
-  catch(err){
 
-    console.error(err);
+  } catch (error) {
+
+    console.error(
+      "Admin access check error:",
+      error
+    );
 
     hideAdminNav();
-
   }
 }
 
-function hideAdminNav(){
+
+/* =========================================================
+   HIDE ADMIN NAV
+   ========================================================= */
+
+function hideAdminNav() {
 
   $("#adminNav")
-    ?.classList.add("hidden");
-
+    ?.classList.add(
+      "hidden"
+    );
 }
 
-function showAdminPage(){
 
-  if(!isAdmin){
+/* =========================================================
+   SHOW ADMIN PAGE
+   ========================================================= */
+
+function showAdminPage() {
+
+  if (!isAdmin) {
 
     alert(
       "Admin access required."
@@ -635,130 +1569,230 @@ function showAdminPage(){
     return;
   }
 
-  document
-    .querySelector(".content")
-    ?.classList.add("hidden");
+
+  $(".content")
+    ?.classList.add(
+      "hidden"
+    );
+
 
   accountPage
-    ?.classList.add("hidden");
+    ?.classList.add(
+      "hidden"
+    );
+
 
   $("#adminPage")
-    ?.classList.remove("hidden");
+    ?.classList.remove(
+      "hidden"
+    );
 
-  if($("#adminRole")){
-    $("#adminRole").textContent=
+
+  if ($("#adminRole")) {
+
+    $("#adminRole")
+      .textContent =
       "admin";
   }
 
-  if($("#adminStatus")){
-    $("#adminStatus").textContent=
+
+  if ($("#adminStatus")) {
+
+    $("#adminStatus")
+      .textContent =
       "✓ Authorized";
   }
 
-  if($("#adminEmail")){
-    $("#adminEmail").textContent=
-      currentUser?.email || "—";
-  }
 
+  if ($("#adminEmail")) {
+
+    $("#adminEmail")
+      .textContent =
+      currentUser?.email ||
+      "—";
+  }
 }
+
+
+/* =========================================================
+   BACK FROM ADMIN
+   ========================================================= */
 
 $("#backFromAdmin")
   ?.addEventListener(
     "click",
-    ()=>{
+    () => {
+
       $("#adminPage")
-        ?.classList.add("hidden");
+        ?.classList.add(
+          "hidden"
+        );
+
 
       showDashboard();
     }
   );
 
+
+/* =========================================================
+   ADMIN USERS
+   ========================================================= */
+
 $("#adminUsersBtn")
   ?.addEventListener(
     "click",
-    ()=>{
+    () => {
 
-      const box=$("#adminMessage");
+      const box =
+        $("#adminMessage");
 
-      if(!box) return;
 
-      box.style.display="block";
+      if (!box) {
+        return;
+      }
 
-      box.textContent=
+
+      box.style.display =
+        "block";
+
+
+      box.textContent =
         "User management needs a secure backend/Edge Function. Do not expose the Supabase service_role key in the frontend.";
-
     }
   );
+
+
+/* =========================================================
+   ADMIN CREDITS
+   ========================================================= */
 
 $("#adminCreditsBtn")
   ?.addEventListener(
     "click",
-    ()=>{
+    () => {
 
-      const box=$("#adminMessage");
+      const box =
+        $("#adminMessage");
 
-      if(!box) return;
 
-      box.style.display="block";
+      if (!box) {
+        return;
+      }
 
-      box.textContent=
+
+      box.style.display =
+        "block";
+
+
+      box.textContent =
         "Credits management is ready for the next backend step.";
-
     }
   );
+
+
+/* =========================================================
+   ADMIN VIDEOS
+   ========================================================= */
 
 $("#adminVideosBtn")
   ?.addEventListener(
     "click",
-    ()=>{
+    () => {
 
-      const box=$("#adminMessage");
+      const box =
+        $("#adminMessage");
 
-      if(!box) return;
 
-      box.style.display="block";
+      if (!box) {
+        return;
+      }
 
-      box.textContent=
+
+      box.style.display =
+        "block";
+
+
+      box.textContent =
         "Video management is ready for the next backend step.";
-
     }
   );
+
+
+/* =========================================================
+   ADMIN SETTINGS
+   ========================================================= */
 
 $("#adminSettingsBtn")
   ?.addEventListener(
     "click",
-    ()=>{
+    () => {
 
-      const box=$("#adminMessage");
+      const box =
+        $("#adminMessage");
 
-      if(!box) return;
 
-      box.style.display="block";
-
-      box.textContent=
-        "Admin settings are ready for the next backend step.";
-
-    }
-  );
-
-$$("[data-page]").forEach(x=>{
-
-  x.addEventListener(
-    "click",
-    ()=>{
-
-      const p=x.dataset.page;
-
-      if(p==="admin"){
-        showAdminPage();
+      if (!box) {
+        return;
       }
 
+
+      box.style.display =
+        "block";
+
+
+      box.textContent =
+        "Admin settings are ready for the next backend step.";
     }
   );
 
-});
 
-document.addEventListener(
-  "DOMContentLoaded",
-  initSupabaseAdmin
-);
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+async function initializeVikyAI() {
+
+  console.log(
+    "Viky AI initializing..."
+  );
+
+
+  if (!supabaseClient) {
+
+    console.error(
+      "Supabase client could not be created."
+    );
+
+    showLogin();
+
+    return;
+  }
+
+
+  await checkLogin();
+
+
+  console.log(
+    "Viky AI initialized."
+  );
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeVikyAI
+  );
+
+} else {
+
+  initializeVikyAI();
+}
