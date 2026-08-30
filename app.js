@@ -19,18 +19,21 @@ const SUPABASE_KEY =
    SUPABASE CLIENT
    ONLY ONE CLIENT
    ========================================================= */
-
 let supabaseClient = null;
 
 if (
-  window.supabase &&
-  typeof window.supabase.createClient === "function"
+    window.supabase &&
+    typeof window.supabase.createClient === "function"
 ) {
-  supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+    supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 } else {
+    console.error("Supabase library was not loaded.");
+}
+
+const ADMIN_EMAIL = "daimvirk555@gmail.com";
   console.error(
     "Supabase library was not loaded."
   );
