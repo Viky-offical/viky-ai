@@ -7,10 +7,15 @@
   <title>Viky AI — AI Video Generator</title>
   <meta
     name="description"
-    content="Viky AI — Create amazing AI videos from text, images and video."
+    content="Viky AI — create videos from text, images and video."
   >
 
   <link rel="icon" type="image/png" href="cropped_circle_image.png">
+  <link rel="shortcut icon" type="image/png" href="cropped_circle_image.png">
+  <link rel="apple-touch-icon" href="cropped_circle_image.png">
+
+  <!-- Supabase: LOAD ONLY ONCE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -18,7 +23,7 @@
 <body>
 
   <!-- =====================================================
-       AUTH SCREEN
+       LOGIN / SIGNUP SCREEN
        ===================================================== -->
 
   <div id="authScreen" class="auth-screen">
@@ -29,10 +34,6 @@
         VIKY<span>AI</span>
       </div>
 
-      <div class="auth-badge">
-        SECURE AI PLATFORM
-      </div>
-
       <h1 id="authTitle">
         Welcome to Viky AI
       </h1>
@@ -41,60 +42,53 @@
         Sign in to continue
       </p>
 
-      <div id="signupNameWrap" class="input-wrap hidden">
-        <label>Your Name</label>
+      <form id="authForm" autocomplete="off">
+
         <input
           id="authName"
           type="text"
-          placeholder="Enter your name"
-          autocomplete="name"
+          placeholder="Your name"
+          autocomplete="off"
+          style="display:none;"
         >
-      </div>
 
-      <div class="input-wrap">
-        <label>Email Address</label>
         <input
           id="authEmail"
           type="email"
-          placeholder="Enter your email"
-          autocomplete="email"
-          value=""
+          placeholder="Email address"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
         >
-      </div>
 
-      <div class="input-wrap">
-        <label>Password</label>
         <input
           id="authPassword"
           type="password"
-          placeholder="Enter your password"
-          autocomplete="current-password"
-          value=""
+          placeholder="Password"
+          autocomplete="new-password"
         >
-      </div>
 
-      <button
-        id="authButton"
-        class="auth-button"
-        type="button"
-      >
-        Sign In
-      </button>
+        <button
+          id="authButton"
+          type="submit"
+        >
+          Sign In
+        </button>
+
+      </form>
 
       <button
         id="forgotPassword"
-        class="forgot-button"
+        class="auth-link"
         type="button"
       >
         Forgot password?
       </button>
 
-      <div
-        id="authMessage"
-        class="auth-message"
-      ></div>
+      <p id="authMessage"></p>
 
       <div class="auth-switch">
+
         <span id="authSwitchText">
           Don't have an account?
         </span>
@@ -105,6 +99,7 @@
         >
           Create Account
         </button>
+
       </div>
 
     </div>
@@ -113,134 +108,104 @@
 
 
   <!-- =====================================================
-       MAIN APP
+       MAIN APPLICATION
        ===================================================== -->
 
-  <div id="app" class="app hidden">
+  <div class="app">
 
-    <!-- ===================================================
-         SIDEBAR
-         =================================================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
       <div class="brand">
-
-        <div class="brand-name">
-          VIKY <b>AI</b>
-        </div>
-
-        <small>
-          TURN YOUR IDEAS INTO REALITY
-        </small>
-
+        <span>VIKY</span>
+        <b>AI</b>
+        <small>TURN YOUR IDEAS INTO REALITY</small>
       </div>
 
-
-      <nav class="sidebar-nav">
+      <nav>
 
         <a
-          class="nav-link active"
+          class="active"
           data-page="dashboard"
+          href="#"
         >
-          <span class="nav-icon">⌂</span>
-          <span>Dashboard</span>
+          ⌂ <span>Dashboard</span>
         </a>
-
 
         <div class="nav-title">
           AI TOOLS
         </div>
 
-
-        <a
-          class="nav-link"
-          data-mode="text"
-        >
-          <span class="nav-icon">✍</span>
-          <span>Text to Video</span>
+        <a data-mode="text" href="#">
+          ✍️ <span>Text to Video</span>
         </a>
 
-        <a
-          class="nav-link"
-          data-mode="image"
-        >
-          <span class="nav-icon">▧</span>
-          <span>Image to Video</span>
+        <a data-mode="image" href="#">
+          🖼️ <span>Image to Video</span>
         </a>
 
-        <a
-          class="nav-link"
-          data-mode="textimage"
-        >
-          <span class="nav-icon">T+▧</span>
-          <span>Text + Image to Video</span>
-          <em class="new-badge">NEW</em>
+        <a data-mode="textimage" href="#">
+          ✍️🖼️ <span>Text + Image to Video</span>
+          <em>NEW</em>
         </a>
 
-        <a
-          class="nav-link"
-          data-mode="video"
-        >
-          <span class="nav-icon">▶</span>
-          <span>Video to Video</span>
+        <a data-mode="video" href="#">
+          🎞️ <span>Video to Video</span>
         </a>
-
 
         <button
           id="moreTools"
           class="more-btn"
           type="button"
         >
-          <span>＋</span>
-          <span>More</span>
-          <b id="moreArrow">⌄</b>
+          ＋ <span>More</span>
+          <b>⌄</b>
         </button>
-
 
         <div
           id="moreMenu"
           class="more-menu hidden"
         >
 
-          <a data-mode="story">
+          <a data-mode="story" href="#">
             📖 <span>AI Story to Video</span>
           </a>
 
-          <a data-mode="voice">
-            🎙 <span>AI Voice Over</span>
+          <a data-mode="voice" href="#">
+            🎙️ <span>AI Voice Over</span>
           </a>
 
-          <a data-mode="female">
+          <a data-mode="female" href="#">
             👩 <span>Female Voice</span>
           </a>
 
-          <a data-mode="male">
+          <a data-mode="male" href="#">
             👨 <span>Male Voice</span>
           </a>
 
-          <a data-mode="young">
+          <a data-mode="young" href="#">
             🧑 <span>Young Voice</span>
           </a>
 
-          <a data-mode="narrator">
-            🎙 <span>Narrator</span>
+          <a data-mode="narrator" href="#">
+            🎙️ <span>Narrator</span>
           </a>
 
-          <a data-mode="music">
+          <a data-mode="music" href="#">
             🎵 <span>AI Music</span>
           </a>
 
-          <a data-mode="soundfx">
+          <a data-mode="soundfx" href="#">
             🔊 <span>Sound Effects</span>
           </a>
 
-          <a data-mode="subtitle">
+          <a data-mode="subtitle" href="#">
             💬 <span>AI Subtitles</span>
           </a>
 
-          <a data-mode="thumbnail">
-            🖼 <span>AI Thumbnail</span>
+          <a data-mode="thumbnail" href="#">
+            🖼️ <span>AI Thumbnail</span>
           </a>
 
         </div>
@@ -250,20 +215,16 @@
           LIBRARY
         </div>
 
-
-        <a class="nav-link" data-mode="videos">
-          <span class="nav-icon">▱</span>
-          <span>My Videos</span>
+        <a data-mode="videos" href="#">
+          ▱ <span>My Videos</span>
         </a>
 
-        <a class="nav-link" data-mode="templates">
-          <span class="nav-icon">▦</span>
-          <span>Templates</span>
+        <a data-mode="templates" href="#">
+          ▦ <span>Templates</span>
         </a>
 
-        <a class="nav-link" data-mode="favorites">
-          <span class="nav-icon">♡</span>
-          <span>Favorites</span>
+        <a data-mode="favorites" href="#">
+          ♡ <span>Favorites</span>
         </a>
 
 
@@ -271,45 +232,34 @@
           ACCOUNT
         </div>
 
-
-        <a class="nav-link" data-page="profile">
-          <span class="nav-icon">♙</span>
-          <span>Profile</span>
+        <a data-page="profile" href="#">
+          ♙ <span>Profile</span>
         </a>
 
-        <a class="nav-link" data-page="subscription">
-          <span class="nav-icon">▣</span>
-          <span>Subscription</span>
+        <a data-page="subscription" href="#">
+          ▣ <span>Subscription</span>
         </a>
 
-        <a class="nav-link" data-page="settings">
-          <span class="nav-icon">⚙</span>
-          <span>Settings</span>
+        <a data-page="settings" href="#">
+          ⚙ <span>Settings</span>
         </a>
-
 
         <!-- ADMIN NAV -->
-
         <a
           id="adminNav"
-          class="nav-link admin-nav hidden"
           data-page="admin"
+          class="hidden"
+          href="#"
         >
-          <span class="nav-icon">◆</span>
-          <span>Admin Panel</span>
-          <em>ADMIN</em>
+          🛡️ <span>Admin Panel</span>
         </a>
 
       </nav>
 
 
-      <!-- SIDEBAR PRO CARD -->
-
       <div class="side-card">
 
-        <div class="side-card-title">
-          VIKY AI PRO
-        </div>
+        <b>Viky AI PRO</b>
 
         <p>
           Unlock premium generation, higher quality
@@ -328,15 +278,13 @@
     </aside>
 
 
-    <!-- ===================================================
-         MAIN
-         =================================================== -->
+    <!-- MAIN -->
 
-    <main class="main">
+    <main>
 
-      <!-- TOP HEADER -->
+      <!-- HEADER -->
 
-      <header class="topbar">
+      <header>
 
         <div class="mobile-brand">
           VIKY <b>AI</b>
@@ -344,66 +292,42 @@
 
         <div class="top-actions">
 
-          <button class="top-icon">
-            ◔
-          </button>
-
-          <button class="top-icon">
-            ♧
-          </button>
-
+          <span>◔</span>
+          <span>♧</span>
 
           <div
-            id="topAvatar"
+            id="userAvatar"
             class="avatar"
           >
             V
           </div>
 
+          <div class="user-header-info">
 
-          <div class="user-identity">
+            <b id="headerUserName">
+              Viky User
+            </b>
 
-            <strong id="topUserName">
+            <span
+              id="headerRole"
+              class="role-badge user-role"
+            >
+              <i></i>
               User
-            </strong>
-
-            <div class="role-line">
-
-              <span
-                id="roleDot"
-                class="role-dot user-dot"
-              ></span>
-
-              <span id="topUserRole">
-                USER
-              </span>
-
-            </div>
+            </span>
 
           </div>
 
-
-          <button
-            id="logoutButton"
-            class="logout-button"
-            type="button"
-          >
-            Logout
-          </button>
+          <span>⌄</span>
 
         </div>
 
       </header>
 
 
-      <!-- =================================================
-           DASHBOARD CONTENT
-           ================================================= -->
+      <!-- DASHBOARD -->
 
-      <section
-        id="dashboardContent"
-        class="content"
-      >
+      <section class="content">
 
         <div class="hero-title">
 
@@ -418,7 +342,6 @@
             </p>
 
           </div>
-
 
           <div class="credits">
 
@@ -435,45 +358,41 @@
         </div>
 
 
-        <!-- MODE CARDS -->
-
         <div class="modes">
 
           <button
             class="mode active"
             data-mode="text"
+            type="button"
           >
-
             <strong>T</strong>
 
             <span>
               <b>Text to Video</b>
               <small>Create video from text prompt</small>
             </span>
-
           </button>
 
 
           <button
             class="mode"
             data-mode="image"
+            type="button"
           >
-
             <strong>▧</strong>
 
             <span>
               <b>Image to Video</b>
               <small>Upload an image and animate it</small>
             </span>
-
           </button>
 
 
           <button
             class="mode"
             data-mode="textimage"
+            type="button"
           >
-
             <strong>T+▧</strong>
 
             <span>
@@ -482,35 +401,28 @@
             </span>
 
             <em>NEW</em>
-
           </button>
 
 
           <button
             class="mode"
             data-mode="video"
+            type="button"
           >
-
             <strong>▶</strong>
 
             <span>
               <b>Video to Video</b>
               <small>Transform an existing video</small>
             </span>
-
           </button>
 
         </div>
 
 
-        <!-- WORKSPACE -->
-
         <div class="workspace">
 
-
-          <!-- LEFT PANEL -->
-
-          <div class="panel generator-panel">
+          <div class="panel">
 
             <label
               id="uploadLabel"
@@ -518,9 +430,9 @@
             >
 
               <input
-                id="mediaInput"
                 type="file"
-                accept="image/*"
+                id="mediaInput"
+                accept="image/*,video/*"
               >
 
               <span class="upload-icon">
@@ -538,14 +450,11 @@
             </label>
 
 
-            <label class="field-label">
-
+            <label>
               Prompt
-
-              <span>
+              <span class="muted">
                 Describe what you want to see
               </span>
-
             </label>
 
 
@@ -566,7 +475,6 @@
 
             <div class="settings-grid">
 
-
               <div>
 
                 <label>
@@ -575,12 +483,32 @@
 
                 <div class="choices duration">
 
-                  <button>2 sec</button>
-                  <button class="selected">5 sec</button>
-                  <button>10 sec</button>
-                  <button>15 sec</button>
-                  <button>30 sec</button>
-                  <button>1 min</button>
+                  <button type="button">
+                    2 sec
+                  </button>
+
+                  <button
+                    class="selected"
+                    type="button"
+                  >
+                    5 sec
+                  </button>
+
+                  <button type="button">
+                    10 sec
+                  </button>
+
+                  <button type="button">
+                    15 sec
+                  </button>
+
+                  <button type="button">
+                    30 sec
+                  </button>
+
+                  <button type="button">
+                    1 min
+                  </button>
 
                 </div>
 
@@ -595,19 +523,22 @@
 
                 <div class="choices ratio">
 
-                  <button class="selected">
+                  <button
+                    class="selected"
+                    type="button"
+                  >
                     16:9
                   </button>
 
-                  <button>
+                  <button type="button">
                     9:16
                   </button>
 
-                  <button>
+                  <button type="button">
                     1:1
                   </button>
 
-                  <button>
+                  <button type="button">
                     4:5
                   </button>
 
@@ -642,27 +573,21 @@
                 </label>
 
                 <select>
-
                   <option selected>
                     Realistic Cinematic
                   </option>
-
                   <option>
                     3D Animation
                   </option>
-
                   <option>
                     Anime
                   </option>
-
                   <option>
                     Cartoon
                   </option>
-
                   <option>
                     Fantasy
                   </option>
-
                 </select>
 
               </div>
@@ -670,7 +595,7 @@
             </div>
 
 
-            <!-- VOICE PANEL -->
+            <!-- VOICE -->
 
             <div
               id="voicePanel"
@@ -680,7 +605,6 @@
               <div class="voice-head">
 
                 <div>
-
                   <b>
                     🎙 AI Voice Over
                   </b>
@@ -688,7 +612,6 @@
                   <small>
                     Turn your script into natural speech.
                   </small>
-
                 </div>
 
                 <span class="cost-pill">
@@ -708,6 +631,7 @@
                 <button
                   class="voice-choice selected"
                   data-voice="female"
+                  type="button"
                 >
                   👩
                   <b>Female</b>
@@ -717,6 +641,7 @@
                 <button
                   class="voice-choice"
                   data-voice="male"
+                  type="button"
                 >
                   👨
                   <b>Male</b>
@@ -726,6 +651,7 @@
                 <button
                   class="voice-choice"
                   data-voice="young"
+                  type="button"
                 >
                   🧑
                   <b>Young</b>
@@ -735,8 +661,9 @@
                 <button
                   class="voice-choice"
                   data-voice="narrator"
+                  type="button"
                 >
-                  🎙
+                  🎙️
                   <b>Narrator</b>
                   <small>Documentary</small>
                 </button>
@@ -772,18 +699,15 @@
             </div>
 
 
-            <!-- ADVANCED -->
-
             <details>
 
               <summary>
-                ⚙ Advanced Settings
+                Advanced Settings
               </summary>
 
               <div class="advanced">
 
                 <label>
-
                   Camera Movement
 
                   <select>
@@ -795,10 +719,8 @@
 
                 </label>
 
-
                 <label>
-
-                  Seed
+                  Seed (optional)
 
                   <input
                     placeholder="Random"
@@ -812,17 +734,14 @@
 
 
             <button
-              id="generate"
               class="generate"
+              id="generate"
               type="button"
             >
-
               ⚡ GENERATE VIDEO
-
               <span>
                 20 credits
               </span>
-
             </button>
 
 
@@ -830,6 +749,8 @@
               Generation cost:
               <b>20 credits</b>
               per video.
+              Your free account starts with
+              <b>100 credits</b>.
             </p>
 
           </div>
@@ -839,9 +760,6 @@
 
           <aside class="right">
 
-
-            <!-- PLAN -->
-
             <div class="panel plan">
 
               <div class="plan-head">
@@ -850,44 +768,33 @@
                   Your Plan
                 </span>
 
-                <a onclick="scrollToPricing()">
+                <a
+                  href="#pricing"
+                  onclick="scrollToPricing(); return false;"
+                >
                   View Plans
                 </a>
 
               </div>
 
-
               <div class="unlimited">
-
-                <span class="infinity">
-                  ∞
-                </span>
-
-                <b id="planName">
-                  Free
-                </b>
-
+                ∞ <b>Free</b>
               </div>
 
-
-              <p id="planCredits">
+              <p>
                 100 welcome credits
               </p>
 
-
               <div class="bar">
-                <i id="creditBar"></i>
+                <i></i>
               </div>
 
-
-              <small id="planStatus">
-                100 credits available
+              <small>
+                80 credits remaining after one sample video
               </small>
 
             </div>
 
-
-            <!-- RECENT -->
 
             <div class="panel recent">
 
@@ -897,12 +804,11 @@
                   Recent Videos
                 </span>
 
-                <a>
+                <a href="#">
                   View All
                 </a>
 
               </div>
-
 
               <div id="recentList">
 
@@ -949,7 +855,6 @@
 
           <div class="price-grid">
 
-
             <article>
 
               <span class="tag">
@@ -970,7 +875,10 @@
                 5 videos • Voice: 10 min • Monthly
               </p>
 
-              <button onclick="buy('Starter')">
+              <button
+                type="button"
+                onclick="buy('Starter')"
+              >
                 Get Started
               </button>
 
@@ -997,7 +905,10 @@
                 25 videos • Voice: 60 min • Monthly
               </p>
 
-              <button onclick="buy('Pro')">
+              <button
+                type="button"
+                onclick="buy('Pro')"
+              >
                 Upgrade to Pro
               </button>
 
@@ -1024,7 +935,10 @@
                 50 videos • Voice: 150 min • Monthly
               </p>
 
-              <button onclick="buy('Premium')">
+              <button
+                type="button"
+                onclick="buy('Premium')"
+              >
                 Go Premium
               </button>
 
@@ -1035,6 +949,8 @@
 
           <p class="pricing-note">
             Discount prices shown are introductory promotional pricing.
+            Final payment/tax availability depends on the payment provider
+            and region.
           </p>
 
         </section>
@@ -1053,7 +969,10 @@
 
         <div class="account-top">
 
-          <button id="backDashboard">
+          <button
+            id="backDashboard"
+            type="button"
+          >
             ← Back to Dashboard
           </button>
 
@@ -1063,8 +982,6 @@
 
         </div>
 
-
-        <!-- PROFILE -->
 
         <div
           id="profilePage"
@@ -1079,49 +996,24 @@
             Manage your Viky AI account information.
           </p>
 
-
-          <div class="profile-role-box">
-
-            <div
-              id="profileRoleDot"
-              class="role-dot user-dot"
-            ></div>
-
-            <div>
-
-              <strong id="profileRole">
-                USER
-              </strong>
-
-              <small id="profileRoleText">
-                Standard account
-              </small>
-
-            </div>
-
-          </div>
-
-
           <div class="form-row">
 
             <label>
-
               Display Name
 
               <input
                 id="profileName"
-                type="text"
+                value="Viky User"
               >
 
             </label>
 
-
             <label>
-
               Email
 
               <input
                 id="profileEmail"
+                value=""
                 type="email"
                 readonly
               >
@@ -1130,28 +1022,25 @@
 
           </div>
 
-
           <label>
-
             Username
 
             <input
               id="profileUsername"
-              type="text"
-              placeholder="@vikyuser"
+              value="@vikyuser"
             >
 
           </label>
 
-
-          <button class="save-btn">
+          <button
+            class="save-btn"
+            type="button"
+          >
             Save Profile
           </button>
 
         </div>
 
-
-        <!-- SUBSCRIPTION -->
 
         <div
           id="subscriptionPage"
@@ -1166,44 +1055,58 @@
             Choose a monthly credit plan.
           </p>
 
-
           <div class="sub-cards">
 
             <div>
               <b>Starter</b>
               <strong>$3/mo</strong>
-              <span>100 credits • 5 videos</span>
-              <button onclick="buy('Starter')">
+              <span>
+                100 credits • 5 videos • 10 voice min
+              </span>
+              <button
+                type="button"
+                onclick="buy('Starter')"
+              >
                 Upgrade
               </button>
             </div>
-
 
             <div class="sub-featured">
               <b>Pro ⭐</b>
               <strong>$6/mo</strong>
-              <span>500 credits • 25 videos</span>
-              <button onclick="buy('Pro')">
+              <span>
+                500 credits • 25 videos • 60 voice min
+              </span>
+              <button
+                type="button"
+                onclick="buy('Pro')"
+              >
                 Upgrade
               </button>
             </div>
 
-
             <div>
               <b>Premium</b>
               <strong>$10/mo</strong>
-              <span>1,000 credits • 50 videos</span>
-              <button onclick="buy('Premium')">
+              <span>
+                1,000 credits • 50 videos • 150 voice min
+              </span>
+              <button
+                type="button"
+                onclick="buy('Premium')"
+              >
                 Upgrade
               </button>
             </div>
 
           </div>
 
+          <div class="discount">
+            🔥 55% OFF promotional pricing
+          </div>
+
         </div>
 
-
-        <!-- SETTINGS -->
 
         <div
           id="settingsPage"
@@ -1218,9 +1121,7 @@
             Control your Viky AI experience.
           </p>
 
-
           <label>
-
             Default Video Quality
 
             <select>
@@ -1231,9 +1132,7 @@
 
           </label>
 
-
           <label>
-
             Default Aspect Ratio
 
             <select>
@@ -1245,178 +1144,159 @@
 
           </label>
 
-
           <label class="toggle">
-            <input type="checkbox" checked>
+            <input
+              type="checkbox"
+              checked
+            >
             Email notifications
           </label>
 
-
           <label class="toggle">
-            <input type="checkbox" checked>
+            <input
+              type="checkbox"
+              checked
+            >
             Auto-save generated projects
           </label>
 
-
-          <button class="save-btn">
+          <button
+            class="save-btn"
+            type="button"
+          >
             Save Settings
           </button>
 
         </div>
 
+      </section>
 
-        <!-- ADMIN PAGE -->
 
-        <div
-          id="adminPage"
-          class="admin-page hidden"
-        >
+      <!-- =================================================
+           ADMIN PAGE
+           ================================================= -->
+
+      <section
+        id="adminPage"
+        class="admin-page hidden"
+      >
+
+        <div class="account-top">
+
+          <button
+            id="backFromAdmin"
+            type="button"
+          >
+            ← Back to Dashboard
+          </button>
+
+          <span>
+            Admin Panel
+          </span>
+
+        </div>
+
+
+        <div class="admin-card">
 
           <div class="admin-header">
 
-            <div>
+            <div class="admin-title">
 
-              <div class="admin-title-row">
-
-                <span class="admin-red-dot"></span>
-
-                <h2>
-                  Admin Panel
-                </h2>
-
+              <div
+                id="adminAvatar"
+                class="admin-avatar"
+              >
+                A
               </div>
 
-              <p>
-                Viky AI administration dashboard
-              </p>
+              <div>
+
+                <h2>
+                  Admin Dashboard
+                </h2>
+
+                <p>
+                  Viky AI Administration
+                </p>
+
+              </div>
 
             </div>
 
 
-            <div class="admin-authorized">
-              ✓ AUTHORIZED ADMIN
+            <div class="admin-role-badge">
+              <i></i>
+              <b id="adminRole">
+                Admin
+              </b>
             </div>
 
           </div>
 
 
-          <div class="admin-grid">
+          <div class="admin-info">
 
+            <div>
+              <span>
+                Status
+              </span>
 
-            <div class="admin-card">
-
-              <div class="admin-card-icon blue">
-                👥
-              </div>
-
-              <h3>
-                Users
-              </h3>
-
-              <p>
-                Manage registered Viky AI users.
-              </p>
-
-              <button id="adminUsersBtn">
-                Manage Users
-              </button>
-
+              <strong id="adminStatus">
+                ✓ Authorized
+              </strong>
             </div>
 
+            <div>
+              <span>
+                Admin Email
+              </span>
 
-            <div class="admin-card">
-
-              <div class="admin-card-icon green">
-                ∞
-              </div>
-
-              <h3>
-                Unlimited Credits
-              </h3>
-
-              <p>
-                Admin account has unlimited credits.
-              </p>
-
-              <button id="adminCreditsBtn">
-                Credits
-              </button>
-
+              <strong id="adminEmail">
+                —
+              </strong>
             </div>
 
-
-            <div class="admin-card">
-
-              <div class="admin-card-icon red">
-                ▶
-              </div>
-
-              <h3>
-                Videos
-              </h3>
-
-              <p>
-                Review generated video activity.
-              </p>
-
-              <button id="adminVideosBtn">
-                Video Manager
-              </button>
-
-            </div>
+          </div>
 
 
-            <div class="admin-card">
+          <div class="admin-actions">
 
-              <div class="admin-card-icon purple">
-                ⚙
-              </div>
+            <button
+              id="adminUsersBtn"
+              type="button"
+            >
+              👥 Manage Users
+            </button>
 
-              <h3>
-                Settings
-              </h3>
+            <button
+              id="adminCreditsBtn"
+              type="button"
+            >
+              💳 Manage Credits
+            </button>
 
-              <p>
-                Manage administrator settings.
-              </p>
+            <button
+              id="adminVideosBtn"
+              type="button"
+            >
+              🎬 Manage Videos
+            </button>
 
-              <button id="adminSettingsBtn">
-                Admin Settings
-              </button>
-
-            </div>
+            <button
+              id="adminSettingsBtn"
+              type="button"
+            >
+              ⚙ Admin Settings
+            </button>
 
           </div>
 
 
           <div
             id="adminMessage"
-            class="admin-message hidden"
+            class="admin-message"
           ></div>
-
-
-          <div class="admin-account">
-
-            <span class="admin-red-dot"></span>
-
-            <div>
-
-              <strong>
-                ADMIN ACCOUNT
-              </strong>
-
-              <small id="adminEmail">
-                —
-              </small>
-
-            </div>
-
-
-            <div class="admin-unlimited">
-              ∞ Unlimited Credits
-            </div>
-
-          </div>
 
         </div>
 
@@ -1432,10 +1312,7 @@
   </div>
 
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Main JavaScript -->
+  <!-- APP JS -->
   <script src="app.js"></script>
 
 </body>
