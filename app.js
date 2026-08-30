@@ -3055,18 +3055,13 @@ function createSupabaseClient() {
 
   if (
     !window.supabase ||
-    typeof window.supabase.createClient !==
-      "function"
+    typeof window.supabase.createClient !== "function"
   ) {
-
     console.error(
       "Supabase JavaScript library was not loaded."
     );
-
     return null;
-
   }
-
 
   try {
 
@@ -3074,22 +3069,11 @@ function createSupabaseClient() {
       SUPABASE_URL,
       SUPABASE_KEY,
       {
-
         auth: {
-
-          /*
-             IMPORTANT:
-             Login does not survive browser close.
-          */
-
-          persistSession: false,
-
-          autoRefreshToken: false,
-
-          detectSessionInUrl: false
-
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
         }
-
       }
     );
 
@@ -3101,11 +3085,8 @@ function createSupabaseClient() {
     );
 
     return null;
-
   }
-
 }
-
 
 /* =========================================================
    INITIALIZE
