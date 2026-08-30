@@ -1,7 +1,7 @@
 /* =========================================================
    VIKY AI
-   COMPLETE FIXED APP.JS
-   SUPABASE AUTH + ADMIN + USER + CREDITS + LOGOUT
+   SUPABASE AUTH + USER + ADMIN + DATABASE CREDITS
+   COPY-PASTE READY app.js
    ========================================================= */
 
 
@@ -34,6 +34,11 @@ let isAdmin = false;
 let signupMode = false;
 let mode = "text";
 
+/*
+   Local fallback.
+   Database profile will be used when available.
+*/
+
 let credits = 100;
 
 
@@ -45,24 +50,23 @@ function $(selector) {
   return document.querySelector(selector);
 }
 
+
 function $$(selector) {
   return document.querySelectorAll(selector);
 }
 
 
-/* =========================================================
-   CHECK ADMIN
-   ========================================================= */
-
 function isCurrentAdmin() {
 
-  const email =
-    currentUser?.email?.trim().toLowerCase();
+  if (!currentUser?.email) {
+    return false;
+  }
 
   return (
-    !!email &&
-    email === ADMIN_EMAIL.trim().toLowerCase()
+    currentUser.email.trim().toLowerCase() ===
+    ADMIN_EMAIL.trim().toLowerCase()
   );
+
 }
 
 
@@ -74,7 +78,9 @@ function showAuthMessage(message, isError = false) {
 
   const element = $("#authMessage");
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.textContent = message || "";
 
@@ -82,6 +88,7 @@ function showAuthMessage(message, isError = false) {
     isError
       ? "#ff5c5c"
       : "#22c55e";
+
 }
 
 
@@ -95,39 +102,52 @@ function clearLoginFields() {
   const password = $("#authPassword");
   const name = $("#authName");
 
-  if (email) {
-    email.value = "";
-  }
+  [email, password, name].forEach((field) => {
 
-  if (password) {
-    password.value = "";
-  }
+    if (!field) {
+      return;
+    }
 
-  if (name) {
-    name.value = "";
-  }
+    field.value = "";
+    field.removeAttribute("value");
+
+  });
+
+  showAuthMessage("");
+
 }
 
 
 /* =========================================================
-   FORCE EMPTY AUTH FIELDS
+   FORCE EMPTY LOGIN FIELDS
    ========================================================= */
 
 function forceEmptyLoginFields() {
 
-  [
-    $("#authEmail"),
-    $("#authPassword"),
-    $("#authName")
-  ].forEach(field => {
+  const email = $("#authEmail");
+  const password = $("#authPassword");
+  const name = $("#authName");
 
-    if (!field) return;
+  [email, password, name].forEach((field) => {
+
+    if (!field) {
+      return;
+    }
 
     field.value = "";
-
     field.removeAttribute("value");
 
+    /*
+       Prevent browser autofill as much as possible.
+    */
+
+    field.setAttribute(
+      "autocomplete",
+      "off"
+    );
+
   });
+
 }
 
 
@@ -144,8 +164,10 @@ function showLogin() {
   }
 
   forceEmptyLoginFields();
+  clearLoginFields();
 
   updateRoleUI(null);
+
 }
 
 
@@ -160,6 +182,7 @@ function hideLogin() {
   if (authScreen) {
     authScreen.style.display = "none";
   }
+
 }
 
 
@@ -169,10 +192,18 @@ function hideLogin() {
 
 function updateRoleUI(user) {
 
-  const headerName = $("#headerUserName");
-  const headerRole = $("#headerRole");
-  const avatar = $("#userAvatar");
-  const adminNav = $("#adminNav");
+  const headerName =
+    $("#headerUserName");
+
+  const headerRole =
+    $("#headerRole");
+
+  const avatar =
+    $("#userAvatar");
+
+  const adminNav =
+    $("#adminNav");
+
 
   if (!user) {
 
@@ -181,11 +212,13 @@ function updateRoleUI(user) {
     }
 
     if (headerRole) {
+
       headerRole.className =
         "role-badge user-role";
 
       headerRole.innerHTML =
         "<i></i>User";
+
     }
 
     if (avatar) {
@@ -195,14 +228,20 @@ function updateRoleUI(user) {
     adminNav?.classList.add("hidden");
 
     return;
+
   }
 
 
   const email =
-    user.email?.trim().toLowerCase() || "";
+    (user.email || "")
+      .trim()
+      .toLowerCase();
+
 
   const admin =
-    email === ADMIN_EMAIL.trim().toLowerCase();
+    email ===
+    ADMIN_EMAIL.trim().toLowerCase();
+
 
   isAdmin = admin;
 
@@ -216,6 +255,7 @@ function updateRoleUI(user) {
   if (headerName) {
     headerName.textContent = name;
   }
+
 
   if (avatar) {
     avatar.textContent =
@@ -232,6 +272,7 @@ function updateRoleUI(user) {
 
       headerRole.innerHTML =
         "<i></i>Admin";
+
     }
 
     adminNav?.classList.remove("hidden");
@@ -245,15 +286,289 @@ function updateRoleUI(user) {
 
       headerRole.innerHTML =
         "<i></i>User";
+
     }
 
     adminNav?.classList.add("hidden");
+
   }
+
 }
 
 
 /* =========================================================
-   CREDIT UI
+   LOAD USER PROFILE / CREDITS
+   ========================================================= */
+
+async function loadUserProfile() {
+
+  if (!supabaseClient || !currentUser) {
+    return;
+  }
+
+
+  /*
+     ADMIN = ALWAYS UNLIMITED
+  */
+
+  if (isCurrentAdmin()) {
+
+    isAdmin = true;
+    credits = Infinity;
+
+    updateCreditUI();
+
+    return;
+
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select("credits, full_name")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    /*
+       Profile exists.
+    */
+
+    if (data) {
+
+      if (
+        typeof data.credits === "number"
+      ) {
+
+        credits =
+          Math.max(
+            0,
+            data.credits
+          );
+
+      } else {
+
+        credits = 100;
+
+      }
+
+
+      /*
+         If database has a name,
+         use it.
+      */
+
+      if (
+        data.full_name &&
+        !currentUser.user_metadata?.full_name
+      ) {
+
+        currentUser.user_metadata =
+          currentUser.user_metadata || {};
+
+        currentUser.user_metadata.full_name =
+          data.full_name;
+
+      }
+
+    } else {
+
+      /*
+         Profile doesn't exist.
+         Create it with 100 credits.
+      */
+
+      credits = 100;
+
+      await createUserProfile();
+
+    }
+
+
+  } catch (error) {
+
+    console.warn(
+      "Could not load profile:",
+      error
+    );
+
+    /*
+       Temporary fallback.
+       Login still works.
+    */
+
+    if (!Number.isFinite(credits)) {
+      credits = 100;
+    }
+
+  }
+
+
+  updateCreditUI();
+
+}
+
+
+/* =========================================================
+   CREATE USER PROFILE
+   ========================================================= */
+
+async function createUserProfile() {
+
+  if (!supabaseClient || !currentUser) {
+    return false;
+  }
+
+
+  if (isCurrentAdmin()) {
+
+    credits = Infinity;
+
+    return true;
+
+  }
+
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .insert({
+
+          id: currentUser.id,
+
+          email:
+            currentUser.email || "",
+
+          full_name:
+            currentUser.user_metadata?.full_name ||
+            currentUser.email?.split("@")[0] ||
+            "Viky User",
+
+          credits: 100
+
+        });
+
+
+    if (error) {
+
+      /*
+         Duplicate profile is okay.
+      */
+
+      if (
+        !String(error.message || "")
+          .toLowerCase()
+          .includes("duplicate")
+      ) {
+
+        throw error;
+
+      }
+
+    }
+
+
+    credits = 100;
+
+    updateCreditUI();
+
+    return true;
+
+
+  } catch (error) {
+
+    console.error(
+      "Create profile error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE USER CREDITS
+   ========================================================= */
+
+async function saveUserCredits() {
+
+  if (
+    !supabaseClient ||
+    !currentUser ||
+    isCurrentAdmin()
+  ) {
+
+    return true;
+
+  }
+
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .update({
+
+          credits:
+            Math.max(
+              0,
+              Number.isFinite(credits)
+                ? credits
+                : 100
+            )
+
+        })
+        .eq(
+          "id",
+          currentUser.id
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    return true;
+
+
+  } catch (error) {
+
+    console.error(
+      "Save credits error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   UPDATE CREDIT UI
    ========================================================= */
 
 function updateCreditUI() {
@@ -268,10 +583,12 @@ function updateCreditUI() {
 
     if (creditCount) {
 
-      creditCount.textContent = "∞";
+      creditCount.textContent =
+        "∞";
 
       creditCount.title =
         "Unlimited Credits";
+
     }
 
   } else {
@@ -281,9 +598,15 @@ function updateCreditUI() {
     }
 
     if (creditCount) {
+
       creditCount.textContent =
         String(credits);
+
+      creditCount.title =
+        "Credits remaining";
+
     }
+
   }
 
 
@@ -306,18 +629,24 @@ function updateCreditUI() {
   if (isAdmin) {
 
     if (unlimited) {
+
       unlimited.innerHTML =
         "∞ <b>Admin Unlimited</b>";
+
     }
 
     if (planParagraph) {
+
       planParagraph.textContent =
         "Unlimited credits • All features unlocked";
+
     }
 
     if (planSmall) {
+
       planSmall.textContent =
         "Unlimited generation available for admin";
+
     }
 
     if (planBar) {
@@ -331,18 +660,24 @@ function updateCreditUI() {
   } else {
 
     if (unlimited) {
+
       unlimited.innerHTML =
         "∞ <b>Free</b>";
+
     }
 
     if (planParagraph) {
+
       planParagraph.textContent =
         "100 welcome credits";
+
     }
 
     if (planSmall) {
+
       planSmall.textContent =
         `${credits} credits remaining`;
+
     }
 
     if (planBar) {
@@ -356,14 +691,17 @@ function updateCreditUI() {
           0,
           Math.min(
             100,
-            credits
+            (credits / 100) * 100
           )
         );
 
       planBarInner.style.width =
         `${percentage}%`;
+
     }
+
   }
+
 }
 
 
@@ -373,7 +711,10 @@ function updateCreditUI() {
 
 function setupAdminDashboard() {
 
-  if (!isAdmin) return;
+  if (!isAdmin) {
+    return;
+  }
+
 
   credits = Infinity;
 
@@ -413,9 +754,12 @@ function setupAdminDashboard() {
       generate.querySelector("span");
 
     if (span) {
+
       span.textContent =
         "∞ Unlimited";
+
     }
+
   }
 
 
@@ -460,20 +804,27 @@ function setupAdminDashboard() {
     }
 
     if (button) {
+
       button.textContent =
         "ADMIN ACCESS";
+
     }
+
   }
+
 }
 
 
 /* =========================================================
-   USER DASHBOARD
+   NORMAL USER DASHBOARD
    ========================================================= */
 
 function setupUserDashboard() {
 
-  if (isAdmin) return;
+  if (isAdmin) {
+    return;
+  }
+
 
   if (!Number.isFinite(credits)) {
     credits = 100;
@@ -488,8 +839,10 @@ function setupUserDashboard() {
 
 
   if (heroTitle) {
+
     heroTitle.textContent =
       "Generate AI Video";
+
   }
 
 
@@ -514,11 +867,12 @@ function setupUserDashboard() {
 
 
   updateCreditUI();
+
 }
 
 
 /* =========================================================
-   SHOW APP
+   SHOW APPLICATION
    ========================================================= */
 
 async function showApp() {
@@ -528,6 +882,7 @@ async function showApp() {
     showLogin();
 
     return;
+
   }
 
 
@@ -542,21 +897,19 @@ async function showApp() {
     "Viky User";
 
 
-  /*
-     Replace only exact Viky User text.
-  */
-
   document
     .querySelectorAll("body *")
-    .forEach(element => {
+    .forEach((element) => {
 
       if (
         element.children.length === 0 &&
-        element.textContent.trim() === "Viky User"
+        element.textContent.trim() ===
+          "Viky User"
       ) {
 
         element.textContent =
           userName;
+
       }
 
     });
@@ -587,13 +940,15 @@ async function showApp() {
 
 
   /*
-     ADMIN / USER
+     Load database credits.
   */
+
+  await loadUserProfile();
+
 
   if (isCurrentAdmin()) {
 
     isAdmin = true;
-
     credits = Infinity;
 
     setupAdminDashboard();
@@ -602,15 +957,13 @@ async function showApp() {
 
     isAdmin = false;
 
-    if (!Number.isFinite(credits)) {
-      credits = 100;
-    }
-
     setupUserDashboard();
+
   }
 
 
   updateCreditUI();
+
 }
 
 
@@ -623,11 +976,12 @@ function hideAdminNav() {
   $("#adminNav")
     ?.classList
     .add("hidden");
+
 }
 
 
 /* =========================================================
-   CHECK ADMIN ACCESS
+   CHECK ADMIN
    ========================================================= */
 
 async function checkAdminAccess() {
@@ -641,6 +995,7 @@ async function checkAdminAccess() {
     updateRoleUI(null);
 
     return false;
+
   }
 
 
@@ -665,14 +1020,13 @@ async function checkAdminAccess() {
     if (!user) {
 
       currentUser = null;
-
       isAdmin = false;
 
       hideAdminNav();
-
       updateRoleUI(null);
 
       return false;
+
     }
 
 
@@ -703,8 +1057,10 @@ async function checkAdminAccess() {
 
 
       if (adminRole) {
+
         adminRole.textContent =
           "Admin";
+
       }
 
 
@@ -723,12 +1079,6 @@ async function checkAdminAccess() {
 
       }
 
-    } else {
-
-      if (!Number.isFinite(credits)) {
-        credits = 100;
-      }
-
     }
 
 
@@ -740,10 +1090,9 @@ async function checkAdminAccess() {
   } catch (error) {
 
     console.error(
-      "Admin access check failed:",
+      "Admin check failed:",
       error
     );
-
 
     isAdmin = false;
 
@@ -752,14 +1101,14 @@ async function checkAdminAccess() {
     updateRoleUI(currentUser);
 
     return false;
+
   }
+
 }
 
 
 /* =========================================================
    AUTH MODE
-   IMPORTANT:
-   DO NOT CLEAR FORM HERE
    ========================================================= */
 
 function setAuthMode(isSignup) {
@@ -793,8 +1142,10 @@ function setAuthMode(isSignup) {
   if (signupMode) {
 
     if (title) {
+
       title.textContent =
         "Create your account";
+
     }
 
     if (subtitle) {
@@ -805,13 +1156,17 @@ function setAuthMode(isSignup) {
     }
 
     if (name) {
+
       name.style.display =
         "block";
+
     }
 
     if (button) {
+
       button.textContent =
         "Create Account";
+
     }
 
     if (switchText) {
@@ -829,10 +1184,11 @@ function setAuthMode(isSignup) {
     }
 
     if (forgot) {
+
       forgot.style.display =
         "none";
-    }
 
+    }
 
   } else {
 
@@ -851,8 +1207,10 @@ function setAuthMode(isSignup) {
     }
 
     if (name) {
+
       name.style.display =
         "none";
+
     }
 
     if (button) {
@@ -882,7 +1240,12 @@ function setAuthMode(isSignup) {
         "block";
 
     }
+
   }
+
+
+  clearLoginFields();
+
 }
 
 
@@ -900,6 +1263,7 @@ async function loginUser() {
     );
 
     return;
+
   }
 
 
@@ -921,6 +1285,7 @@ async function loginUser() {
     );
 
     return;
+
   }
 
 
@@ -932,6 +1297,7 @@ async function loginUser() {
     );
 
     return;
+
   }
 
 
@@ -963,9 +1329,8 @@ async function loginUser() {
       await supabaseClient.auth
         .signInWithPassword({
 
-          email: email,
-
-          password: password
+          email,
+          password
 
         });
 
@@ -993,13 +1358,18 @@ async function loginUser() {
     await showApp();
 
 
-    forceEmptyLoginFields();
+    clearLoginFields();
 
 
     /*
-       Auth screen is hidden,
-       therefore message is not important.
+       Login successful message is intentionally
+       shown after clearing fields.
     */
+
+    showAuthMessage(
+      "Login successful!"
+    );
+
 
   } catch (error) {
 
@@ -1031,6 +1401,7 @@ async function loginUser() {
       true
     );
 
+
   } finally {
 
     if (button) {
@@ -1043,7 +1414,9 @@ async function loginUser() {
           : "Sign In";
 
     }
+
   }
+
 }
 
 
@@ -1061,6 +1434,7 @@ async function signupUser() {
     );
 
     return;
+
   }
 
 
@@ -1087,6 +1461,7 @@ async function signupUser() {
     );
 
     return;
+
   }
 
 
@@ -1098,6 +1473,7 @@ async function signupUser() {
     );
 
     return;
+
   }
 
 
@@ -1109,6 +1485,7 @@ async function signupUser() {
     );
 
     return;
+
   }
 
 
@@ -1120,6 +1497,7 @@ async function signupUser() {
     );
 
     return;
+
   }
 
 
@@ -1151,15 +1529,15 @@ async function signupUser() {
       await supabaseClient.auth
         .signUp({
 
-          email: email,
-
-          password: password,
+          email,
+          password,
 
           options: {
 
             data: {
 
-              full_name: name
+              full_name:
+                name
 
             }
 
@@ -1174,51 +1552,72 @@ async function signupUser() {
 
 
     /*
-       IMPORTANT:
-       If email confirmation is OFF,
-       Supabase returns a session.
+       EMAIL CONFIRMATION OFF:
+       session + user should be returned.
     */
 
     if (
-      data?.user &&
-      data?.session
+      data?.user
     ) {
 
       currentUser =
         data.user;
 
 
-      await checkAdminAccess();
+      /*
+         If session exists, user can enter
+         dashboard immediately.
+      */
 
-      await showApp();
+      if (data?.session) {
+
+        await checkAdminAccess();
+
+        /*
+           Create profile with 100 credits.
+        */
+
+        if (!isCurrentAdmin()) {
+
+          await createUserProfile();
+
+        }
 
 
-      forceEmptyLoginFields();
+        await showApp();
+
+        clearLoginFields();
 
 
-      return;
-    }
+        showAuthMessage(
+          "Account created successfully!"
+        );
 
+      } else {
 
-    /*
-       If confirmation is still enabled,
-       user exists but no session.
-    */
+        /*
+           If Supabase still requires confirmation,
+           stay on login and explain.
+        */
 
-    if (data?.user && !data?.session) {
+        clearLoginFields();
 
-      showAuthMessage(
-        "Account created. Email confirmation is still enabled in Supabase.",
-        true
+        setAuthMode(false);
+
+        showAuthMessage(
+          "Account created. Please sign in.",
+          false
+        );
+
+      }
+
+    } else {
+
+      throw new Error(
+        "Account could not be created."
       );
 
-      return;
     }
-
-
-    throw new Error(
-      "Account could not be created."
-    );
 
 
   } catch (error) {
@@ -1234,13 +1633,16 @@ async function signupUser() {
       "Account creation failed.";
 
 
+    /*
+       Common Supabase messages.
+    */
+
     const lower =
       message.toLowerCase();
 
 
     if (
-      lower.includes("user already registered") ||
-      lower.includes("already registered")
+      lower.includes("user already registered")
     ) {
 
       message =
@@ -1267,7 +1669,9 @@ async function signupUser() {
           : "Sign In";
 
     }
+
   }
+
 }
 
 
@@ -1287,54 +1691,35 @@ function setupAuth() {
     $("#forgotPassword");
 
 
-  /*
-     Prevent duplicate listeners.
-  */
-
-  if (form) {
-
-    form.addEventListener(
-      "submit",
-      async event => {
-
-        event.preventDefault();
-
-        event.stopPropagation();
-
-
-        if (signupMode) {
-
-          await signupUser();
-
-        } else {
-
-          await loginUser();
-
-        }
-
-      }
-    );
-
-  }
-
-
-  /*
-     LOGIN / SIGNUP SWITCH
-  */
-
-  authSwitch?.addEventListener(
-    "click",
-    event => {
+  form?.addEventListener(
+    "submit",
+    async (event) => {
 
       event.preventDefault();
-
       event.stopPropagation();
 
 
-      /*
-         Save current mode only.
-         Do NOT wipe the form here.
-      */
+      if (signupMode) {
+
+        await signupUser();
+
+      } else {
+
+        await loginUser();
+
+      }
+
+    }
+  );
+
+
+  authSwitch?.addEventListener(
+    "click",
+    (event) => {
+
+      event.preventDefault();
+      event.stopPropagation();
+
 
       setAuthMode(
         !signupMode
@@ -1344,13 +1729,9 @@ function setupAuth() {
   );
 
 
-  /*
-     FORGOT PASSWORD
-  */
-
   forgotPassword?.addEventListener(
     "click",
-    async event => {
+    async (event) => {
 
       event.preventDefault();
 
@@ -1363,6 +1744,7 @@ function setupAuth() {
         );
 
         return;
+
       }
 
 
@@ -1380,6 +1762,7 @@ function setupAuth() {
         );
 
         return;
+
       }
 
 
@@ -1397,8 +1780,10 @@ function setupAuth() {
             .resetPasswordForEmail(
               email,
               {
+
                 redirectTo:
                   window.location.origin
+
               }
             );
 
@@ -1431,6 +1816,7 @@ function setupAuth() {
 
     }
   );
+
 }
 
 
@@ -1445,6 +1831,7 @@ async function checkLogin() {
     showLogin();
 
     return;
+
   }
 
 
@@ -1473,12 +1860,11 @@ async function checkLogin() {
 
       await showApp();
 
+
     } else {
 
       currentUser = null;
-
       isAdmin = false;
-
       credits = 100;
 
       showLogin();
@@ -1495,14 +1881,13 @@ async function checkLogin() {
 
 
     currentUser = null;
-
     isAdmin = false;
-
     credits = 100;
 
     showLogin();
 
   }
+
 }
 
 
@@ -1519,22 +1904,12 @@ function setupAuthStateListener() {
 
   supabaseClient.auth
     .onAuthStateChange(
-      async (event, session) => {
-
-        console.log(
-          "Auth event:",
-          event
-        );
-
+      (event, session) => {
 
         if (session?.user) {
 
           currentUser =
             session.user;
-
-
-          isAdmin =
-            isCurrentAdmin();
 
 
           updateRoleUI(
@@ -1544,11 +1919,6 @@ function setupAuthStateListener() {
 
           hideLogin();
 
-
-          /*
-             Small delay prevents Supabase
-             auth event race conditions.
-          */
 
           setTimeout(
             async () => {
@@ -1565,11 +1935,8 @@ function setupAuthStateListener() {
         } else {
 
           currentUser = null;
-
           isAdmin = false;
-
           credits = 100;
-
 
           hideAdminNav();
 
@@ -1581,6 +1948,7 @@ function setupAuthStateListener() {
 
       }
     );
+
 }
 
 
@@ -1609,9 +1977,7 @@ async function logout() {
 
 
     currentUser = null;
-
     isAdmin = false;
-
     credits = 100;
 
 
@@ -1619,9 +1985,7 @@ async function logout() {
 
     updateRoleUI(null);
 
-    forceEmptyLoginFields();
-
-    setAuthMode(false);
+    clearLoginFields();
 
     showLogin();
 
@@ -1640,6 +2004,7 @@ async function logout() {
     );
 
   }
+
 }
 
 
@@ -1658,25 +2023,29 @@ function setMode(newMode) {
 
 
   $$(".mode")
-    .forEach(element => {
+    .forEach(
+      (element) => {
 
-      element.classList.toggle(
-        "active",
-        element.dataset.mode === newMode
-      );
+        element.classList.toggle(
+          "active",
+          element.dataset.mode === newMode
+        );
 
-    });
+      }
+    );
 
 
   $$(".sidebar a[data-mode]")
-    .forEach(element => {
+    .forEach(
+      (element) => {
 
-      element.classList.toggle(
-        "active",
-        element.dataset.mode === newMode
-      );
+        element.classList.toggle(
+          "active",
+          element.dataset.mode === newMode
+        );
 
-    });
+      }
+    );
 
 
   const upload =
@@ -1771,6 +2140,7 @@ function setMode(newMode) {
       "A cinematic scene with realistic movement...";
 
   }
+
 }
 
 
@@ -1784,9 +2154,11 @@ function showDashboard() {
     ?.classList
     .add("hidden");
 
+
   $("#adminPage")
     ?.classList
     .add("hidden");
+
 
   $(".content")
     ?.classList
@@ -1794,6 +2166,7 @@ function showDashboard() {
 
 
   updateCreditUI();
+
 }
 
 
@@ -1807,9 +2180,11 @@ function showAccount(page) {
     ?.classList
     .remove("hidden");
 
+
   $(".content")
     ?.classList
     .add("hidden");
+
 
   $("#adminPage")
     ?.classList
@@ -1821,13 +2196,15 @@ function showAccount(page) {
     "subscription",
     "settings"
   ]
-    .forEach(pageName => {
+    .forEach(
+      (pageName) => {
 
-      $(`#${pageName}Page`)
-        ?.classList
-        .add("hidden");
+        $(`#${pageName}Page`)
+          ?.classList
+          .add("hidden");
 
-    });
+      }
+    );
 
 
   $(`#${page}Page`)
@@ -1846,6 +2223,7 @@ function showAccount(page) {
       page.slice(1);
 
   }
+
 }
 
 
@@ -1862,11 +2240,11 @@ function showAdminPage() {
     );
 
     return;
+
   }
 
 
   isAdmin = true;
-
   credits = Infinity;
 
 
@@ -1874,9 +2252,11 @@ function showAdminPage() {
     ?.classList
     .add("hidden");
 
+
   $("#accountPage")
     ?.classList
     .add("hidden");
+
 
   $("#adminPage")
     ?.classList
@@ -1924,6 +2304,7 @@ function showAdminPage() {
       "Admin access active • Unlimited Credits • All features unlocked.";
 
   }
+
 }
 
 
@@ -1941,13 +2322,17 @@ function scrollToPricing() {
 
       $("#pricing")
         ?.scrollIntoView({
+
           behavior: "smooth",
+
           block: "start"
+
         });
 
     },
     100
   );
+
 }
 
 
@@ -1968,12 +2353,14 @@ function buy(plan) {
     );
 
     return;
+
   }
 
 
   alert(
     `${plan} selected. Payment gateway will be connected in the backend step.`
   );
+
 }
 
 
@@ -2027,45 +2414,49 @@ function setupDashboard() {
   */
 
   $$(".mode, .sidebar a[data-mode]")
-    .forEach(element => {
+    .forEach(
+      (element) => {
 
-      element.addEventListener(
-        "click",
-        event => {
+        element.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-
-          const selectedMode =
-            element.dataset.mode;
+            event.preventDefault();
 
 
-          if (
-            [
-              "female",
-              "male",
-              "young",
-              "narrator"
-            ].includes(selectedMode)
-          ) {
+            const selectedMode =
+              element.dataset.mode;
 
-            setMode("voice");
 
-          } else if (selectedMode) {
+            if (
+              [
+                "female",
+                "male",
+                "young",
+                "narrator"
+              ].includes(selectedMode)
+            ) {
 
-            setMode(selectedMode);
+              setMode("voice");
+
+            } else if (selectedMode) {
+
+              setMode(
+                selectedMode
+              );
+
+            }
+
+
+            moreMenu
+              ?.classList
+              .add("hidden");
 
           }
+        );
 
-
-          moreMenu
-            ?.classList
-            .add("hidden");
-
-        }
-      );
-
-    });
+      }
+    );
 
 
   /*
@@ -2074,7 +2465,7 @@ function setupDashboard() {
 
   moreTools?.addEventListener(
     "click",
-    event => {
+    (event) => {
 
       event.preventDefault();
 
@@ -2091,7 +2482,8 @@ function setupDashboard() {
       if (button) {
 
         button.textContent =
-          moreMenu?.classList.contains("hidden")
+          moreMenu?.classList
+            .contains("hidden")
             ? "⌄"
             : "⌃";
 
@@ -2106,45 +2498,49 @@ function setupDashboard() {
   */
 
   $$("[data-page]")
-    .forEach(element => {
+    .forEach(
+      (element) => {
 
-      element.addEventListener(
-        "click",
-        event => {
+        element.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-
-          const page =
-            element.dataset.page;
+            event.preventDefault();
 
 
-          if (page === "dashboard") {
+            const page =
+              element.dataset.page;
 
-            showDashboard();
 
-            return;
+            if (page === "dashboard") {
+
+              showDashboard();
+
+              return;
+
+            }
+
+
+            if (page === "admin") {
+
+              showAdminPage();
+
+              return;
+
+            }
+
+
+            if (page) {
+
+              showAccount(page);
+
+            }
+
           }
+        );
 
-
-          if (page === "admin") {
-
-            showAdminPage();
-
-            return;
-          }
-
-
-          if (page) {
-
-            showAccount(page);
-
-          }
-
-        }
-      );
-
-    });
+      }
+    );
 
 
   /*
@@ -2154,7 +2550,7 @@ function setupDashboard() {
   $("#backDashboard")
     ?.addEventListener(
       "click",
-      event => {
+      (event) => {
 
         event.preventDefault();
 
@@ -2171,7 +2567,7 @@ function setupDashboard() {
   $("#backFromAdmin")
     ?.addEventListener(
       "click",
-      event => {
+      (event) => {
 
         event.preventDefault();
 
@@ -2186,32 +2582,36 @@ function setupDashboard() {
   */
 
   $$(".choices button")
-    .forEach(button => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        event => {
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-
-          button.parentElement
-            ?.querySelectorAll("button")
-            .forEach(item => {
-
-              item.classList
-                .remove("selected");
-
-            });
+            event.preventDefault();
 
 
-          button.classList
-            .add("selected");
+            button.parentElement
+              ?.querySelectorAll("button")
+              .forEach(
+                (item) => {
 
-        }
-      );
+                  item.classList
+                    .remove("selected");
 
-    });
+                }
+              );
+
+
+            button.classList
+              .add("selected");
+
+          }
+        );
+
+      }
+    );
 
 
   /*
@@ -2219,31 +2619,35 @@ function setupDashboard() {
   */
 
   $$(".voice-choice")
-    .forEach(button => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        event => {
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-
-          $$(".voice-choice")
-            .forEach(item => {
-
-              item.classList
-                .remove("selected");
-
-            });
+            event.preventDefault();
 
 
-          button.classList
-            .add("selected");
+            $$(".voice-choice")
+              .forEach(
+                (item) => {
 
-        }
-      );
+                  item.classList
+                    .remove("selected");
 
-    });
+                }
+              );
+
+
+            button.classList
+              .add("selected");
+
+          }
+        );
+
+      }
+    );
 
 
   /*
@@ -2284,9 +2688,26 @@ function setupDashboard() {
   $("#generate")
     ?.addEventListener(
       "click",
-      event => {
+      async (event) => {
 
         event.preventDefault();
+
+
+        /*
+           Make sure user is logged in.
+        */
+
+        if (!currentUser) {
+
+          alert(
+            "Please login first."
+          );
+
+          showLogin();
+
+          return;
+
+        }
 
 
         const cost =
@@ -2304,7 +2725,7 @@ function setupDashboard() {
 
 
         /*
-           ADMIN = NO CREDIT LIMIT
+           ADMIN = NO CREDIT LIMIT.
         */
 
         if (
@@ -2319,11 +2740,12 @@ function setupDashboard() {
           scrollToPricing();
 
           return;
+
         }
 
 
         /*
-           MEDIA REQUIRED
+           Required media.
         */
 
         if (
@@ -2340,11 +2762,12 @@ function setupDashboard() {
           );
 
           return;
+
         }
 
 
         /*
-           PROMPT REQUIRED
+           Required prompt.
         */
 
         if (
@@ -2358,25 +2781,33 @@ function setupDashboard() {
           );
 
           return;
+
         }
 
 
         /*
-           DEDUCT ONLY NORMAL USER CREDITS
+           Deduct credits from normal user.
         */
 
         if (!isAdmin) {
 
           credits -= cost;
 
+          updateCreditUI();
+
+          /*
+             Save immediately.
+          */
+
+          await saveUserCredits();
+
         } else {
 
           credits = Infinity;
 
+          updateCreditUI();
+
         }
-
-
-        updateCreditUI();
 
 
         const button =
@@ -2388,8 +2819,7 @@ function setupDashboard() {
         }
 
 
-        button.disabled =
-          true;
+        button.disabled = true;
 
 
         button.innerHTML =
@@ -2475,6 +2905,7 @@ function setupDashboard() {
 
             list.prepend(item);
 
+
           },
           1800
         );
@@ -2526,6 +2957,7 @@ function setupDashboard() {
             );
 
             return;
+
           }
 
 
@@ -2558,20 +2990,28 @@ function setupDashboard() {
   */
 
   $$(".save-btn")
-    .forEach(button => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+        button.addEventListener(
+          "click",
+          async () => {
 
-          alert(
-            "Settings saved successfully."
-          );
+            /*
+               Save credits if applicable.
+            */
 
-        }
-      );
+            await saveUserCredits();
 
-    });
+            alert(
+              "Settings saved successfully."
+            );
+
+          }
+        );
+
+      }
+    );
 
 
   /*
@@ -2579,28 +3019,31 @@ function setupDashboard() {
   */
 
   $$(".side-card button")
-    .forEach(button => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+        button.addEventListener(
+          "click",
+          () => {
 
-          if (isAdmin) {
+            if (isAdmin) {
 
-            alert(
-              "Admin account already has Unlimited Credits and all features unlocked."
-            );
+              alert(
+                "Admin account already has Unlimited Credits and all features unlocked."
+              );
 
-          } else {
+            } else {
 
-            scrollToPricing();
+              scrollToPricing();
+
+            }
 
           }
+        );
 
-        }
-      );
+      }
+    );
 
-    });
 }
 
 
@@ -2613,7 +3056,7 @@ function createSupabaseClient() {
   if (
     !window.supabase ||
     typeof window.supabase.createClient !==
-    "function"
+      "function"
   ) {
 
     console.error(
@@ -2621,6 +3064,7 @@ function createSupabaseClient() {
     );
 
     return null;
+
   }
 
 
@@ -2634,7 +3078,8 @@ function createSupabaseClient() {
         auth: {
 
           /*
-             Login is not stored permanently.
+             IMPORTANT:
+             Login does not survive browser close.
           */
 
           persistSession: false,
@@ -2648,7 +3093,6 @@ function createSupabaseClient() {
       }
     );
 
-
   } catch (error) {
 
     console.error(
@@ -2657,7 +3101,9 @@ function createSupabaseClient() {
     );
 
     return null;
+
   }
+
 }
 
 
@@ -2673,19 +3119,18 @@ async function initializeVikyAI() {
 
 
   /*
-     Initial login mode.
-     IMPORTANT:
-     Do not call clearLoginFields
-     after switching signup/login.
+     Empty login fields.
   */
 
   forceEmptyLoginFields();
+
+  clearLoginFields();
 
   setAuthMode(false);
 
 
   /*
-     SUPABASE
+     Create Supabase.
   */
 
   supabaseClient =
@@ -2697,11 +3142,12 @@ async function initializeVikyAI() {
     showLogin();
 
     return;
+
   }
 
 
   /*
-     SETUP
+     Setup.
   */
 
   setupAuth();
@@ -2712,15 +3158,14 @@ async function initializeVikyAI() {
 
 
   /*
-     SESSION
+     Check current session.
   */
 
   await checkLogin();
 
 
   /*
-     Keep login fields empty
-     when login screen is visible.
+     Final empty-field protection.
   */
 
   if (
@@ -2736,6 +3181,7 @@ async function initializeVikyAI() {
   console.log(
     "Viky AI initialized."
   );
+
 }
 
 
@@ -2744,7 +3190,8 @@ async function initializeVikyAI() {
    ========================================================= */
 
 if (
-  document.readyState === "loading"
+  document.readyState ===
+  "loading"
 ) {
 
   document.addEventListener(
