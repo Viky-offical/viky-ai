@@ -14,21 +14,26 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_D6EylVAso_ihWIS33ObsYg_onCINCKo";
 
-
-/* =========================================================
-   ADMIN CONFIG
-   ========================================================= */
-
-const ADMIN_EMAIL =
-  "daimvirk555@gmail.com";
-
-
-/* =========================================================
-   SUPABASE CLIENT
-   ONLY ONE CLIENT
-   ========================================================= */
-
 let supabaseClient = null;
+
+if (
+  window.supabase &&
+  typeof window.supabase.createClient === "function"
+) {
+  supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+} else {
+  console.error("Supabase library was not loaded.");
+}
+
+const ADMIN_EMAIL = "daimvirk555@gmail.com";
+
+let currentUser = null;
+let isAdmin = false;
+
+
 
 if (
   window.supabase &&
