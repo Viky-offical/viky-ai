@@ -500,7 +500,7 @@ window.scrollToPricing=scrollToPricing;
    SUPABASE ADMIN DASHBOARD
    ========================================= */
 
-let supabaseClient=null;
+
 let currentUser=null;
 let isAdmin=false;
 
