@@ -1,3 +1,178 @@
+const SUPABASE_URL = "https://qhqcjfcxolurjbvobur.supabase.co";
+const SUPABASE_KEY = "sb_publishable_D6EylVAso_ihWIS33ObsYg_onCINCKo";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const authScreen = document.querySelector("#authScreen");
+const authTitle = document.querySelector("#authTitle");
+const authSubtitle = document.querySelector("#authSubtitle");
+const authName = document.querySelector("#authName");
+const authEmail = document.querySelector("#authEmail");
+const authPassword = document.querySelector("#authPassword");
+const authButton = document.querySelector("#authButton");
+const authSwitch = document.querySelector("#authSwitch");
+const authSwitchText = document.querySelector("#authSwitchText");
+const forgotPassword = document.querySelector("#forgotPassword");
+const authMessage = document.querySelector("#authMessage");
+
+let signupMode = false;
+
+function showAuthMessage(message, error = false) {
+  authMessage.textContent = message;
+  authMessage.style.color = error ? "#ff5c5c" : "#22c55e";
+}
+
+authSwitch.addEventListener("click", () => {
+  signupMode = !signupMode;
+
+  if (signupMode) {
+    authTitle.textContent = "Create your account";
+    authSubtitle.textContent = "Join Viky AI and start creating";
+    authName.style.display = "block";
+    authButton.textContent = "Create Account";
+    authSwitchText.textContent = "Already have an account?";
+    authSwitch.textContent = "Sign In";
+    forgotPassword.style.display = "none";
+  } else {
+    authTitle.textContent = "Welcome to Viky AI";
+    authSubtitle.textContent = "Sign in to continue";
+    authName.style.display = "none";
+    authButton.textContent = "Sign In";
+    authSwitchText.textContent = "Don't have an account?";
+    authSwitch.textContent = "Create Account";
+    forgotPassword.style.display = "block";
+  }
+
+  showAuthMessage("");
+});
+
+authButton.addEventListener("click", async () => {
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+  const name = authName.value.trim();
+
+  if (!email || !password) {
+    showAuthMessage("Please enter email and password.", true);
+    return;
+  }
+
+  if (signupMode && !name) {
+    showAuthMessage("Please enter your name.", true);
+    return;
+  }
+
+  authButton.disabled = true;
+  showAuthMessage("Please wait...");
+
+  try {
+    if (signupMode) {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        showAuthMessage("Account created successfully!");
+        await showApp();
+      } else {
+        showAuthMessage(
+          "Account created! Check your email to verify your account."
+        );
+      }
+    } else {
+      const { error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) throw error;
+
+      showAuthMessage("Login successful!");
+      await showApp();
+    }
+  } catch (error) {
+    showAuthMessage(error.message, true);
+  }
+
+  authButton.disabled = false;
+});
+
+forgotPassword.addEventListener("click", async () => {
+  const email = authEmail.value.trim();
+
+  if (!email) {
+    showAuthMessage("Enter your email first.", true);
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(
+    email,
+    {
+      redirectTo: window.location.origin
+    }
+  );
+
+  if (error) {
+    showAuthMessage(error.message, true);
+  } else {
+    showAuthMessage("Password reset email sent.");
+  }
+});
+
+async function showApp() {
+  if (authScreen) {
+    authScreen.style.display = "none";
+  }
+
+  const { data } = await supabaseClient.auth.getUser();
+
+  if (data.user) {
+    const userName =
+      data.user.user_metadata?.full_name ||
+      data.user.email?.split("@")[0] ||
+      "Viky User";
+
+    document.querySelectorAll("body *").forEach(el => {
+      if (
+        el.children.length === 0 &&
+        el.textContent.trim() === "Viky User"
+      ) {
+        el.textContent = userName;
+      }
+    });
+  }
+}
+
+async function checkLogin() {
+  const { data } = await supabaseClient.auth.getSession();
+
+  if (data.session) {
+    await showApp();
+  } else {
+    authScreen.style.display = "flex";
+  }
+}
+
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    await showApp();
+  } else {
+    authScreen.style.display = "flex";
+  }
+});
+
+checkLogin();
 let mode="text", credits=100;
 
 const $=s=>document.querySelector(s);
