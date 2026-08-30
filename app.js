@@ -1,14 +1,7 @@
 /* =========================================================
    VIKY AI
-   SUPABASE AUTH + USER + ADMIN + DATABASE CREDITS
-   CORRECTED COPY-PASTE READY app.js
-
-   IMPORTANT:
-   - Credits are stored in Supabase database.
-   - LocalStorage is NOT used for credits.
-   - New users get 100 credits only when profile is created.
-   - Refresh will NOT reset credits to 100.
-   - Admin has unlimited credits.
+   SUPABASE AUTH + PERMANENT CREDITS + RECENT VIDEOS
+   COPY-PASTE READY
    ========================================================= */
 
 
@@ -32,6 +25,13 @@ const ADMIN_EMAIL =
 
 
 /* =========================================================
+   DEFAULT CREDITS
+   ========================================================= */
+
+const INITIAL_CREDITS = 100;
+
+
+/* =========================================================
    GLOBAL STATE
    ========================================================= */
 
@@ -49,7 +49,7 @@ let credits = 0;
 
 
 /* =========================================================
-   HELPERS
+   HELPER
    ========================================================= */
 
 function $(selector) {
@@ -73,14 +73,9 @@ function isCurrentAdmin() {
   }
 
   return (
-    currentUser.email
-      .trim()
-      .toLowerCase() ===
-    ADMIN_EMAIL
-      .trim()
-      .toLowerCase()
+    currentUser.email.trim().toLowerCase() ===
+    ADMIN_EMAIL.trim().toLowerCase()
   );
-
 }
 
 
@@ -88,26 +83,20 @@ function isCurrentAdmin() {
    AUTH MESSAGE
    ========================================================= */
 
-function showAuthMessage(
-  message,
-  isError = false
-) {
+function showAuthMessage(message, isError = false) {
 
-  const element =
-    $("#authMessage");
+  const element = $("#authMessage");
 
   if (!element) {
     return;
   }
 
-  element.textContent =
-    message || "";
+  element.textContent = message || "";
 
   element.style.color =
     isError
       ? "#ff5c5c"
       : "#22c55e";
-
 }
 
 
@@ -117,33 +106,22 @@ function showAuthMessage(
 
 function clearLoginFields() {
 
-  const email =
-    $("#authEmail");
+  const email = $("#authEmail");
+  const password = $("#authPassword");
+  const name = $("#authName");
 
-  const password =
-    $("#authPassword");
-
-  const name =
-    $("#authName");
-
-  [
-    email,
-    password,
-    name
-  ].forEach((field) => {
+  [email, password, name].forEach((field) => {
 
     if (!field) {
       return;
     }
 
     field.value = "";
-
     field.removeAttribute("value");
 
   });
 
   showAuthMessage("");
-
 }
 
 
@@ -153,27 +131,17 @@ function clearLoginFields() {
 
 function forceEmptyLoginFields() {
 
-  const email =
-    $("#authEmail");
+  const email = $("#authEmail");
+  const password = $("#authPassword");
+  const name = $("#authName");
 
-  const password =
-    $("#authPassword");
-
-  const name =
-    $("#authName");
-
-  [
-    email,
-    password,
-    name
-  ].forEach((field) => {
+  [email, password, name].forEach((field) => {
 
     if (!field) {
       return;
     }
 
     field.value = "";
-
     field.removeAttribute("value");
 
     field.setAttribute(
@@ -182,7 +150,6 @@ function forceEmptyLoginFields() {
     );
 
   });
-
 }
 
 
@@ -192,22 +159,16 @@ function forceEmptyLoginFields() {
 
 function showLogin() {
 
-  const authScreen =
-    $("#authScreen");
+  const authScreen = $("#authScreen");
 
   if (authScreen) {
-
-    authScreen.style.display =
-      "flex";
-
+    authScreen.style.display = "flex";
   }
 
   forceEmptyLoginFields();
-
   clearLoginFields();
 
   updateRoleUI(null);
-
 }
 
 
@@ -217,16 +178,11 @@ function showLogin() {
 
 function hideLogin() {
 
-  const authScreen =
-    $("#authScreen");
+  const authScreen = $("#authScreen");
 
   if (authScreen) {
-
-    authScreen.style.display =
-      "none";
-
+    authScreen.style.display = "none";
   }
-
 }
 
 
@@ -249,17 +205,10 @@ function updateRoleUI(user) {
     $("#adminNav");
 
 
-  /* -----------------------------------------
-     NO USER
-     ----------------------------------------- */
-
   if (!user) {
 
     if (headerName) {
-
-      headerName.textContent =
-        "Viky User";
-
+      headerName.textContent = "Viky User";
     }
 
     if (headerRole) {
@@ -273,24 +222,14 @@ function updateRoleUI(user) {
     }
 
     if (avatar) {
-
-      avatar.textContent =
-        "V";
-
+      avatar.textContent = "V";
     }
 
-    adminNav?.classList.add(
-      "hidden"
-    );
+    adminNav?.classList.add("hidden");
 
     return;
-
   }
 
-
-  /* -----------------------------------------
-     USER EMAIL
-     ----------------------------------------- */
 
   const email =
     (user.email || "")
@@ -300,18 +239,11 @@ function updateRoleUI(user) {
 
   const admin =
     email ===
-    ADMIN_EMAIL
-      .trim()
-      .toLowerCase();
+    ADMIN_EMAIL.trim().toLowerCase();
 
 
-  isAdmin =
-    admin;
+  isAdmin = admin;
 
-
-  /* -----------------------------------------
-     USER NAME
-     ----------------------------------------- */
 
   const name =
     user.user_metadata?.full_name ||
@@ -320,26 +252,17 @@ function updateRoleUI(user) {
 
 
   if (headerName) {
-
-    headerName.textContent =
-      name;
-
+    headerName.textContent = name;
   }
 
 
   if (avatar) {
 
     avatar.textContent =
-      name
-        .charAt(0)
-        .toUpperCase();
+      name.charAt(0).toUpperCase();
 
   }
 
-
-  /* -----------------------------------------
-     ADMIN
-     ----------------------------------------- */
 
   if (admin) {
 
@@ -353,17 +276,9 @@ function updateRoleUI(user) {
 
     }
 
-    adminNav?.classList.remove(
-      "hidden"
-    );
+    adminNav?.classList.remove("hidden");
 
-  }
-
-  /* -----------------------------------------
-     NORMAL USER
-     ----------------------------------------- */
-
-  else {
+  } else {
 
     if (headerRole) {
 
@@ -375,9 +290,7 @@ function updateRoleUI(user) {
 
     }
 
-    adminNav?.classList.add(
-      "hidden"
-    );
+    adminNav?.classList.add("hidden");
 
   }
 
@@ -385,530 +298,7 @@ function updateRoleUI(user) {
 
 
 /* =========================================================
-   LOAD USER PROFILE / CREDITS
-   =========================================================
-
-   IMPORTANT:
-   Database is the ONLY source of credits.
-
-   There is NO:
-       credits = 100
-   fallback here.
-
-   This prevents refresh from restoring credits.
-   ========================================================= */
-
-async function loadUserProfile() {
-
-  if (
-    !supabaseClient ||
-    !currentUser
-  ) {
-
-    return false;
-
-  }
-
-
-  /* -----------------------------------------
-     ADMIN = UNLIMITED
-     ----------------------------------------- */
-
-  if (isCurrentAdmin()) {
-
-    isAdmin = true;
-
-    credits = Infinity;
-
-    updateCreditUI();
-
-    return true;
-
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("profiles")
-        .select(
-          "credits, full_name"
-        )
-        .eq(
-          "id",
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    /* -----------------------------------------
-       PROFILE EXISTS
-       ----------------------------------------- */
-
-    if (data) {
-
-      if (
-        typeof data.credits ===
-        "number"
-      ) {
-
-        credits =
-          Math.max(
-            0,
-            data.credits
-          );
-
-      }
-
-      else {
-
-        console.error(
-          "Profile exists but credits is invalid."
-        );
-
-        /*
-           NEVER give 100 here.
-        */
-
-        credits = 0;
-
-      }
-
-
-      /* ---------------------------------------
-         DATABASE NAME
-         --------------------------------------- */
-
-      if (
-        data.full_name &&
-        !currentUser
-          .user_metadata
-          ?.full_name
-      ) {
-
-        currentUser.user_metadata =
-          currentUser.user_metadata ||
-          {};
-
-        currentUser
-          .user_metadata
-          .full_name =
-          data.full_name;
-
-      }
-
-
-      updateCreditUI();
-
-      return true;
-
-    }
-
-
-    /* -----------------------------------------
-       PROFILE DOES NOT EXIST
-
-       New user gets 100 only once.
-       ----------------------------------------- */
-
-    const created =
-      await createUserProfile();
-
-
-    if (!created) {
-
-      console.error(
-        "Could not create user profile."
-      );
-
-      credits = 0;
-
-      updateCreditUI();
-
-      return false;
-
-    }
-
-
-    return true;
-
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Could not load profile:",
-      error
-    );
-
-
-    /*
-       VERY IMPORTANT:
-
-       DO NOT DO:
-           credits = 100
-
-       If database fails, do not
-       manufacture free credits.
-    */
-
-    credits = 0;
-
-    updateCreditUI();
-
-    return false;
-
-  }
-
-}
-
-
-/* =========================================================
-   CREATE USER PROFILE
-   ========================================================= */
-
-async function createUserProfile() {
-
-  if (
-    !supabaseClient ||
-    !currentUser
-  ) {
-
-    return false;
-
-  }
-
-
-  /* -----------------------------------------
-     ADMIN
-     ----------------------------------------- */
-
-  if (isCurrentAdmin()) {
-
-    credits = Infinity;
-
-    updateCreditUI();
-
-    return true;
-
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("profiles")
-        .insert({
-
-          id:
-            currentUser.id,
-
-          email:
-            currentUser.email || "",
-
-          full_name:
-            currentUser
-              .user_metadata
-              ?.full_name ||
-            currentUser
-              .email
-              ?.split("@")[0] ||
-            "Viky User",
-
-          credits: 100
-
-        })
-        .select(
-          "credits"
-        )
-        .single();
-
-
-    /* -----------------------------------------
-       ERROR
-       ----------------------------------------- */
-
-    if (error) {
-
-      const message =
-        String(
-          error.message || ""
-        ).toLowerCase();
-
-
-      /*
-         Profile already exists.
-
-         This can happen if Supabase
-         trigger created it first.
-      */
-
-      if (
-        message.includes(
-          "duplicate"
-        ) ||
-        message.includes(
-          "already exists"
-        ) ||
-        message.includes(
-          "unique"
-        )
-      ) {
-
-        const {
-          data: existing,
-          error:
-            existingError
-        } =
-          await supabaseClient
-            .from("profiles")
-            .select(
-              "credits"
-            )
-            .eq(
-              "id",
-              currentUser.id
-            )
-            .single();
-
-
-        if (existingError) {
-
-          throw existingError;
-
-        }
-
-
-        if (
-          typeof existing?.credits ===
-          "number"
-        ) {
-
-          credits =
-            Math.max(
-              0,
-              existing.credits
-            );
-
-        }
-
-        else {
-
-          credits = 0;
-
-        }
-
-
-        updateCreditUI();
-
-        return true;
-
-      }
-
-
-      throw error;
-
-    }
-
-
-    /* -----------------------------------------
-       NEW PROFILE CREATED
-       ----------------------------------------- */
-
-    if (
-      typeof data?.credits ===
-      "number"
-    ) {
-
-      credits =
-        Math.max(
-          0,
-          data.credits
-        );
-
-    }
-
-    else {
-
-      /*
-         This should normally be 100
-         because we inserted 100.
-      */
-
-      credits = 100;
-
-    }
-
-
-    updateCreditUI();
-
-    return true;
-
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Create profile error:",
-      error
-    );
-
-
-    /*
-       Never silently give credits
-       when database creation failed.
-    */
-
-    credits = 0;
-
-    updateCreditUI();
-
-    return false;
-
-  }
-
-}
-
-
-/* =========================================================
-   SAVE USER CREDITS TO DATABASE
-   ========================================================= */
-
-async function saveUserCredits() {
-
-  if (
-    !supabaseClient ||
-    !currentUser
-  ) {
-
-    return false;
-
-  }
-
-
-  /* -----------------------------------------
-     ADMIN
-     ----------------------------------------- */
-
-  if (isCurrentAdmin()) {
-
-    credits = Infinity;
-
-    updateCreditUI();
-
-    return true;
-
-  }
-
-
-  /* -----------------------------------------
-     NORMAL USER
-     ----------------------------------------- */
-
-  const newCredits =
-    Math.max(
-      0,
-      Number.isFinite(credits)
-        ? credits
-        : 0
-    );
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("profiles")
-        .update({
-
-          credits:
-            newCredits
-
-        })
-        .eq(
-          "id",
-          currentUser.id
-        )
-        .select(
-          "credits"
-        )
-        .single();
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    /* -----------------------------------------
-       VERIFY DATABASE RESPONSE
-       ----------------------------------------- */
-
-    if (
-      typeof data?.credits !==
-      "number"
-    ) {
-
-      throw new Error(
-        "Database did not return saved credits."
-      );
-
-    }
-
-
-    credits =
-      Math.max(
-        0,
-        data.credits
-      );
-
-
-    updateCreditUI();
-
-    return true;
-
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Save credits error:",
-      error
-    );
-
-
-    return false;
-
-  }
-
-}
-
-
-/* =========================================================
-   UPDATE CREDIT UI
+   CREDIT UI
    ========================================================= */
 
 function updateCreditUI() {
@@ -917,9 +307,9 @@ function updateCreditUI() {
     $("#creditCount");
 
 
-  /* -----------------------------------------
+  /*
      ADMIN
-     ----------------------------------------- */
+  */
 
   if (isAdmin) {
 
@@ -939,9 +329,9 @@ function updateCreditUI() {
   }
 
 
-  /* -----------------------------------------
+  /*
      NORMAL USER
-     ----------------------------------------- */
+  */
 
   else {
 
@@ -949,9 +339,17 @@ function updateCreditUI() {
       !Number.isFinite(credits)
     ) {
 
-      credits = 0;
+      credits =
+        INITIAL_CREDITS;
 
     }
+
+
+    credits =
+      Math.max(
+        0,
+        Number(credits)
+      );
 
 
     if (creditCount) {
@@ -967,39 +365,25 @@ function updateCreditUI() {
   }
 
 
-  /* -----------------------------------------
-     PLAN ELEMENTS
-     ----------------------------------------- */
-
   const unlimited =
-    document.querySelector(
-      ".unlimited"
-    );
+    document.querySelector(".unlimited");
 
   const planParagraph =
-    document.querySelector(
-      ".plan p"
-    );
+    document.querySelector(".plan p");
 
   const planSmall =
-    document.querySelector(
-      ".plan small"
-    );
+    document.querySelector(".plan small");
 
   const planBar =
-    document.querySelector(
-      ".plan .bar"
-    );
+    document.querySelector(".plan .bar");
 
   const planBarInner =
-    document.querySelector(
-      ".plan .bar i"
-    );
+    document.querySelector(".plan .bar i");
 
 
-  /* -----------------------------------------
-     ADMIN PLAN
-     ----------------------------------------- */
+  /*
+     ADMIN UI
+  */
 
   if (isAdmin) {
 
@@ -1028,26 +412,20 @@ function updateCreditUI() {
 
 
     if (planBar) {
-
-      planBar.style.display =
-        "none";
-
+      planBar.style.display = "none";
     }
 
 
     if (planBarInner) {
-
-      planBarInner.style.width =
-        "100%";
-
+      planBarInner.style.width = "100%";
     }
 
   }
 
 
-  /* -----------------------------------------
-     NORMAL USER PLAN
-     ----------------------------------------- */
+  /*
+     USER UI
+  */
 
   else {
 
@@ -1062,7 +440,7 @@ function updateCreditUI() {
     if (planParagraph) {
 
       planParagraph.textContent =
-        "Welcome credits";
+        "100 welcome credits";
 
     }
 
@@ -1090,7 +468,7 @@ function updateCreditUI() {
           0,
           Math.min(
             100,
-            credits
+            (credits / INITIAL_CREDITS) * 100
           )
         );
 
@@ -1106,15 +484,584 @@ function updateCreditUI() {
 
 
 /* =========================================================
+   CREATE FIRST USER PROFILE
+   =========================================================
+
+   IMPORTANT:
+   100 CREDITS ARE GIVEN ONLY WHEN
+   THE PROFILE DOES NOT EXIST.
+
+   EXISTING PROFILE NEVER GETS RESET TO 100.
+   ========================================================= */
+
+async function createUserProfileIfNeeded() {
+
+  if (
+    !supabaseClient ||
+    !currentUser
+  ) {
+
+    return false;
+
+  }
+
+
+  /*
+     ADMIN
+  */
+
+  if (isCurrentAdmin()) {
+
+    isAdmin = true;
+
+    credits = Infinity;
+
+    return true;
+
+  }
+
+
+  try {
+
+    /*
+       FIRST CHECK IF PROFILE ALREADY EXISTS
+    */
+
+    const {
+      data: existingProfile,
+      error: selectError
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select("id, credits, email, full_name")
+        .eq(
+          "id",
+          currentUser.id
+        )
+        .maybeSingle();
+
+
+    if (selectError) {
+
+      console.error(
+        "Profile lookup error:",
+        selectError
+      );
+
+      return false;
+
+    }
+
+
+    /*
+       PROFILE ALREADY EXISTS
+       DO NOT GIVE 100 AGAIN
+    */
+
+    if (existingProfile) {
+
+      if (
+        typeof existingProfile.credits === "number"
+      ) {
+
+        credits =
+          Math.max(
+            0,
+            existingProfile.credits
+          );
+
+      }
+
+
+      return true;
+
+    }
+
+
+    /*
+       PROFILE DOES NOT EXIST
+       THIS IS THE FIRST TIME
+       GIVE 100 CREDITS
+    */
+
+    const newProfile = {
+
+      id:
+        currentUser.id,
+
+      email:
+        currentUser.email || "",
+
+      full_name:
+        currentUser.user_metadata?.full_name ||
+        currentUser.email?.split("@")[0] ||
+        "Viky User",
+
+      credits:
+        INITIAL_CREDITS
+
+    };
+
+
+    const {
+      data: insertedProfile,
+      error: insertError
+    } =
+      await supabaseClient
+        .from("profiles")
+        .insert(
+          newProfile
+        )
+        .select()
+        .single();
+
+
+    /*
+       INSERT FAILED
+    */
+
+    if (insertError) {
+
+      /*
+         Another request may have created
+         the profile at the same time.
+      */
+
+      const errorText =
+        String(
+          insertError.message || ""
+        ).toLowerCase();
+
+
+      if (
+        errorText.includes("duplicate") ||
+        errorText.includes("unique")
+      ) {
+
+        const {
+          data: profileAfterDuplicate
+        } =
+          await supabaseClient
+            .from("profiles")
+            .select("credits")
+            .eq(
+              "id",
+              currentUser.id
+            )
+            .maybeSingle();
+
+
+        if (profileAfterDuplicate) {
+
+          credits =
+            Number(
+              profileAfterDuplicate.credits
+            ) || 0;
+
+          return true;
+
+        }
+
+      }
+
+
+      console.error(
+        "Create profile error:",
+        insertError
+      );
+
+      return false;
+
+    }
+
+
+    /*
+       SUCCESS
+    */
+
+    credits =
+      Number(
+        insertedProfile?.credits
+      ) || INITIAL_CREDITS;
+
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "createUserProfileIfNeeded error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   LOAD USER PROFILE
+   ========================================================= */
+
+async function loadUserProfile() {
+
+  if (
+    !supabaseClient ||
+    !currentUser
+  ) {
+
+    return false;
+
+  }
+
+
+  /*
+     ADMIN
+  */
+
+  if (isCurrentAdmin()) {
+
+    isAdmin = true;
+
+    credits = Infinity;
+
+    updateCreditUI();
+
+    return true;
+
+  }
+
+
+  try {
+
+    /*
+       GET PROFILE
+    */
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select(
+          "id, email, full_name, credits"
+        )
+        .eq(
+          "id",
+          currentUser.id
+        )
+        .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        "Load profile error:",
+        error
+      );
+
+      /*
+         DO NOT RESET TO 100 HERE.
+      */
+
+      return false;
+
+    }
+
+
+    /*
+       PROFILE EXISTS
+    */
+
+    if (data) {
+
+      /*
+         VERY IMPORTANT:
+         USE DATABASE VALUE EXACTLY.
+         NEVER RESET IT TO 100.
+      */
+
+      credits =
+        Math.max(
+          0,
+          Number(data.credits) || 0
+        );
+
+
+      /*
+         USE DATABASE NAME
+      */
+
+      if (
+        data.full_name
+      ) {
+
+        currentUser.user_metadata =
+          currentUser.user_metadata || {};
+
+        currentUser.user_metadata.full_name =
+          data.full_name;
+
+      }
+
+
+      updateCreditUI();
+
+      return true;
+
+    }
+
+
+    /*
+       PROFILE DOES NOT EXIST
+       CREATE ONCE WITH 100
+    */
+
+    const created =
+      await createUserProfileIfNeeded();
+
+
+    if (!created) {
+
+      /*
+         DO NOT GIVE FAKE 100 CREDITS
+         IF DATABASE PROFILE COULD NOT BE CREATED.
+      */
+
+      credits = 0;
+
+      updateCreditUI();
+
+      return false;
+
+    }
+
+
+    updateCreditUI();
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "loadUserProfile error:",
+      error
+    );
+
+    /*
+       IMPORTANT:
+       NEVER DO:
+       credits = 100
+       HERE.
+    */
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE USER CREDITS
+   ========================================================= */
+
+async function saveUserCredits() {
+
+  if (
+    !supabaseClient ||
+    !currentUser ||
+    isCurrentAdmin()
+  ) {
+
+    return true;
+
+  }
+
+
+  const newCredits =
+    Math.max(
+      0,
+      Number(credits) || 0
+    );
+
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .update({
+
+          credits:
+            newCredits
+
+        })
+        .eq(
+          "id",
+          currentUser.id
+        );
+
+
+    if (error) {
+
+      console.error(
+        "Save credits error:",
+        error
+      );
+
+      return false;
+
+    }
+
+
+    credits =
+      newCredits;
+
+
+    updateCreditUI();
+
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "Save credits exception:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   DEDUCT CREDITS
+   ========================================================= */
+
+async function deductCredits(cost) {
+
+  /*
+     ADMIN
+  */
+
+  if (isCurrentAdmin()) {
+
+    isAdmin = true;
+
+    credits = Infinity;
+
+    updateCreditUI();
+
+    return true;
+
+  }
+
+
+  /*
+     NOT LOGGED IN
+  */
+
+  if (!currentUser) {
+
+    alert(
+      "Please login first."
+    );
+
+    showLogin();
+
+    return false;
+
+  }
+
+
+  /*
+     CHECK BALANCE
+  */
+
+  if (
+    !Number.isFinite(credits)
+  ) {
+
+    await loadUserProfile();
+
+  }
+
+
+  if (
+    credits < cost
+  ) {
+
+    alert(
+      `Not enough credits. This action needs ${cost} credits.`
+    );
+
+    return false;
+
+  }
+
+
+  /*
+     DEDUCT
+  */
+
+  credits -= cost;
+
+
+  /*
+     UPDATE UI IMMEDIATELY
+  */
+
+  updateCreditUI();
+
+
+  /*
+     SAVE TO SUPABASE
+  */
+
+  const saved =
+    await saveUserCredits();
+
+
+  /*
+     IF DATABASE SAVE FAILED,
+     RELOAD THE REAL BALANCE.
+  */
+
+  if (!saved) {
+
+    await loadUserProfile();
+
+    alert(
+      "Credits could not be saved. Please try again."
+    );
+
+    return false;
+
+  }
+
+
+  return true;
+
+}
+
+
+/* =========================================================
    ADMIN DASHBOARD
    ========================================================= */
 
 function setupAdminDashboard() {
 
   if (!isAdmin) {
-
     return;
-
   }
 
 
@@ -1124,14 +1071,10 @@ function setupAdminDashboard() {
 
 
   const heroTitle =
-    document.querySelector(
-      ".hero-title h1"
-    );
+    document.querySelector(".hero-title h1");
 
   const heroSubtitle =
-    document.querySelector(
-      ".hero-title p"
-    );
+    document.querySelector(".hero-title p");
 
 
   if (heroTitle) {
@@ -1157,10 +1100,7 @@ function setupAdminDashboard() {
   if (generate) {
 
     const span =
-      generate.querySelector(
-        "span"
-      );
-
+      generate.querySelector("span");
 
     if (span) {
 
@@ -1173,9 +1113,7 @@ function setupAdminDashboard() {
 
 
   const note =
-    document.querySelector(
-      ".note"
-    );
+    document.querySelector(".note");
 
 
   if (note) {
@@ -1187,34 +1125,24 @@ function setupAdminDashboard() {
 
 
   const sideCard =
-    document.querySelector(
-      ".side-card"
-    );
+    document.querySelector(".side-card");
 
 
   if (sideCard) {
 
     const title =
-      sideCard.querySelector(
-        "b"
-      );
+      sideCard.querySelector("b");
 
     const paragraph =
-      sideCard.querySelector(
-        "p"
-      );
+      sideCard.querySelector("p");
 
     const button =
-      sideCard.querySelector(
-        "button"
-      );
+      sideCard.querySelector("button");
 
 
     if (title) {
-
       title.textContent =
         "Viky AI ADMIN";
-
     }
 
 
@@ -1245,30 +1173,20 @@ function setupAdminDashboard() {
 function setupUserDashboard() {
 
   if (isAdmin) {
-
     return;
-
   }
 
 
-  if (
-    !Number.isFinite(credits)
-  ) {
-
+  if (!Number.isFinite(credits)) {
     credits = 0;
-
   }
 
 
   const heroTitle =
-    document.querySelector(
-      ".hero-title h1"
-    );
+    document.querySelector(".hero-title h1");
 
   const heroSubtitle =
-    document.querySelector(
-      ".hero-title p"
-    );
+    document.querySelector(".hero-title p");
 
 
   if (heroTitle) {
@@ -1288,15 +1206,13 @@ function setupUserDashboard() {
 
 
   const note =
-    document.querySelector(
-      ".note"
-    );
+    document.querySelector(".note");
 
 
   if (note) {
 
     note.innerHTML =
-      'Generation cost: <b>20 credits</b> per video.';
+      'Generation cost: <b>20 credits</b> per video. Your free account starts with <b>100 credits</b>.';
 
   }
 
@@ -1307,7 +1223,7 @@ function setupUserDashboard() {
 
 
 /* =========================================================
-   SHOW APPLICATION
+   SHOW APP
    ========================================================= */
 
 async function showApp() {
@@ -1323,47 +1239,31 @@ async function showApp() {
 
   hideLogin();
 
-  updateRoleUI(
-    currentUser
-  );
+  updateRoleUI(currentUser);
 
 
   const userName =
-    currentUser
-      .user_metadata
-      ?.full_name ||
-    currentUser
-      .email
-      ?.split("@")[0] ||
+    currentUser.user_metadata?.full_name ||
+    currentUser.email?.split("@")[0] ||
     "Viky User";
 
 
-  /* -----------------------------------------
-     UPDATE USER LABELS
-     ----------------------------------------- */
-
   document
-    .querySelectorAll(
-      "body *"
-    )
-    .forEach(
-      (element) => {
+    .querySelectorAll("body *")
+    .forEach((element) => {
 
-        if (
-          element.children
-            .length === 0 &&
-          element.textContent
-            .trim() ===
-            "Viky User"
-        ) {
+      if (
+        element.children.length === 0 &&
+        element.textContent.trim() ===
+          "Viky User"
+      ) {
 
-          element.textContent =
-            userName;
-
-        }
+        element.textContent =
+          userName;
 
       }
-    );
+
+    });
 
 
   const profileName =
@@ -1376,9 +1276,7 @@ async function showApp() {
   if (profileName) {
 
     profileName.value =
-      currentUser
-        .user_metadata
-        ?.full_name ||
+      currentUser.user_metadata?.full_name ||
       userName;
 
   }
@@ -1387,26 +1285,33 @@ async function showApp() {
   if (profileEmail) {
 
     profileEmail.value =
-      currentUser.email ||
-      "";
+      currentUser.email || "";
 
   }
 
 
-  /* -----------------------------------------
-     LOAD DATABASE PROFILE
-     ----------------------------------------- */
+  /*
+     LOAD REAL DATABASE CREDITS
+  */
 
-  await loadUserProfile();
+  const profileLoaded =
+    await loadUserProfile();
 
 
-  /* -----------------------------------------
-     DASHBOARD TYPE
-     ----------------------------------------- */
+  if (!profileLoaded) {
 
-  if (
-    isCurrentAdmin()
-  ) {
+    console.warn(
+      "Profile could not be loaded."
+    );
+
+  }
+
+
+  /*
+     ADMIN / USER UI
+  */
+
+  if (isCurrentAdmin()) {
 
     isAdmin = true;
 
@@ -1414,9 +1319,7 @@ async function showApp() {
 
     setupAdminDashboard();
 
-  }
-
-  else {
+  } else {
 
     isAdmin = false;
 
@@ -1427,20 +1330,12 @@ async function showApp() {
 
   updateCreditUI();
 
-}
 
+  /*
+     LOAD PERMANENT RECENT VIDEOS
+  */
 
-/* =========================================================
-   HIDE ADMIN NAV
-   ========================================================= */
-
-function hideAdminNav() {
-
-  $("#adminNav")
-    ?.classList
-    .add(
-      "hidden"
-    );
+  await loadRecentVideos();
 
 }
 
@@ -1470,15 +1365,11 @@ async function checkAdminAccess() {
       data,
       error
     } =
-      await supabaseClient
-        .auth
-        .getUser();
+      await supabaseClient.auth.getUser();
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -1491,8 +1382,6 @@ async function checkAdminAccess() {
       currentUser = null;
 
       isAdmin = false;
-
-      credits = 0;
 
       hideAdminNav();
 
@@ -1511,9 +1400,7 @@ async function checkAdminAccess() {
       isCurrentAdmin();
 
 
-    updateRoleUI(
-      user
-    );
+    updateRoleUI(user);
 
 
     const adminRole =
@@ -1550,8 +1437,7 @@ async function checkAdminAccess() {
       if (adminEmail) {
 
         adminEmail.textContent =
-          user.email ||
-          "—";
+          user.email || "—";
 
       }
 
@@ -1560,26 +1446,21 @@ async function checkAdminAccess() {
 
     updateCreditUI();
 
+
     return isAdmin;
 
-
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Admin check failed:",
       error
     );
 
-
     isAdmin = false;
 
     hideAdminNav();
 
-    updateRoleUI(
-      currentUser
-    );
+    updateRoleUI(currentUser);
 
     return false;
 
@@ -1592,14 +1473,10 @@ async function checkAdminAccess() {
    AUTH MODE
    ========================================================= */
 
-function setAuthMode(
-  isSignup
-) {
+function setAuthMode(isSignup) {
 
   signupMode =
-    Boolean(
-      isSignup
-    );
+    Boolean(isSignup);
 
 
   const title =
@@ -1623,10 +1500,6 @@ function setAuthMode(
   const forgot =
     $("#forgotPassword");
 
-
-  /* -----------------------------------------
-     SIGNUP
-     ----------------------------------------- */
 
   if (signupMode) {
 
@@ -1685,14 +1558,7 @@ function setAuthMode(
 
     }
 
-  }
-
-
-  /* -----------------------------------------
-     LOGIN
-     ----------------------------------------- */
-
-  else {
+  } else {
 
     if (title) {
 
@@ -1776,19 +1642,13 @@ async function loginUser() {
 
 
   const email =
-    (
-      $("#authEmail")
-        ?.value ||
-      ""
-    )
+    ($("#authEmail")?.value || "")
       .trim()
       .toLowerCase();
 
 
   const password =
-    $("#authPassword")
-      ?.value ||
-    "";
+    $("#authPassword")?.value || "";
 
 
   if (!email) {
@@ -1821,8 +1681,7 @@ async function loginUser() {
 
   if (button) {
 
-    button.disabled =
-      true;
+    button.disabled = true;
 
     button.textContent =
       "Signing In...";
@@ -1841,21 +1700,17 @@ async function loginUser() {
       data,
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .signInWithPassword({
 
           email,
-
           password
 
         });
 
 
     if (error) {
-
       throw error;
-
     }
 
 
@@ -1874,20 +1729,18 @@ async function loginUser() {
 
     await checkAdminAccess();
 
+
     await showApp();
 
 
     clearLoginFields();
 
 
-    showAuthMessage(
-      "Login successful!"
-    );
+    /*
+       DO NOT ADD 100 CREDITS HERE.
+    */
 
-
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Login error:",
@@ -1903,9 +1756,7 @@ async function loginUser() {
     if (
       message
         .toLowerCase()
-        .includes(
-          "invalid login credentials"
-        )
+        .includes("invalid login credentials")
     ) {
 
       message =
@@ -1919,14 +1770,11 @@ async function loginUser() {
       true
     );
 
-  }
-
-  finally {
+  } finally {
 
     if (button) {
 
-      button.disabled =
-        false;
+      button.disabled = false;
 
       button.textContent =
         signupMode
@@ -1959,28 +1807,18 @@ async function signupUser() {
 
 
   const name =
-    (
-      $("#authName")
-        ?.value ||
-      ""
-    )
+    ($("#authName")?.value || "")
       .trim();
 
 
   const email =
-    (
-      $("#authEmail")
-        ?.value ||
-      ""
-    )
+    ($("#authEmail")?.value || "")
       .trim()
       .toLowerCase();
 
 
   const password =
-    $("#authPassword")
-      ?.value ||
-    "";
+    $("#authPassword")?.value || "";
 
 
   if (!name) {
@@ -2019,9 +1857,7 @@ async function signupUser() {
   }
 
 
-  if (
-    password.length < 6
-  ) {
+  if (password.length < 6) {
 
     showAuthMessage(
       "Password must be at least 6 characters.",
@@ -2039,8 +1875,7 @@ async function signupUser() {
 
   if (button) {
 
-    button.disabled =
-      true;
+    button.disabled = true;
 
     button.textContent =
       "Creating Account...";
@@ -2059,12 +1894,10 @@ async function signupUser() {
       data,
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .signUp({
 
           email,
-
           password,
 
           options: {
@@ -2082,82 +1915,11 @@ async function signupUser() {
 
 
     if (error) {
-
       throw error;
-
     }
 
 
-    if (
-      data?.user
-    ) {
-
-      currentUser =
-        data.user;
-
-
-      /* ---------------------------------------
-         SESSION AVAILABLE
-         --------------------------------------- */
-
-      if (
-        data?.session
-      ) {
-
-        await checkAdminAccess();
-
-
-        /*
-           Create profile only if needed.
-
-           If Supabase trigger already created
-           it, duplicate handling will load it.
-        */
-
-        if (
-          !isCurrentAdmin()
-        ) {
-
-          await createUserProfile();
-
-        }
-
-
-        await showApp();
-
-        clearLoginFields();
-
-
-        showAuthMessage(
-          "Account created successfully!"
-        );
-
-      }
-
-
-      /* ---------------------------------------
-         EMAIL CONFIRMATION
-         --------------------------------------- */
-
-      else {
-
-        clearLoginFields();
-
-        setAuthMode(
-          false
-        );
-
-
-        showAuthMessage(
-          "Account created. Please sign in.",
-          false
-        );
-
-      }
-
-    }
-
-    else {
+    if (!data?.user) {
 
       throw new Error(
         "Account could not be created."
@@ -2165,9 +1927,63 @@ async function signupUser() {
 
     }
 
-  }
 
-  catch (error) {
+    currentUser =
+      data.user;
+
+
+    /*
+       SESSION EXISTS
+    */
+
+    if (data.session) {
+
+      await checkAdminAccess();
+
+
+      /*
+         CREATE PROFILE ONLY IF NEEDED.
+         FIRST USER = 100 CREDITS.
+      */
+
+      if (!isCurrentAdmin()) {
+
+        await createUserProfileIfNeeded();
+
+      }
+
+
+      await showApp();
+
+
+      clearLoginFields();
+
+
+      showAuthMessage(
+        "Account created successfully!"
+      );
+
+    }
+
+
+    /*
+       EMAIL CONFIRMATION REQUIRED
+    */
+
+    else {
+
+      clearLoginFields();
+
+      setAuthMode(false);
+
+      showAuthMessage(
+        "Account created. Please confirm your email and then sign in.",
+        false
+      );
+
+    }
+
+  } catch (error) {
 
     console.error(
       "Signup error:",
@@ -2185,9 +2001,7 @@ async function signupUser() {
 
 
     if (
-      lower.includes(
-        "user already registered"
-      )
+      lower.includes("user already registered")
     ) {
 
       message =
@@ -2201,14 +2015,11 @@ async function signupUser() {
       true
     );
 
-  }
-
-  finally {
+  } finally {
 
     if (button) {
 
-      button.disabled =
-        false;
+      button.disabled = false;
 
       button.textContent =
         signupMode
@@ -2238,16 +2049,11 @@ function setupAuth() {
     $("#forgotPassword");
 
 
-  /* -----------------------------------------
-     FORM
-     ----------------------------------------- */
-
   form?.addEventListener(
     "submit",
     async (event) => {
 
       event.preventDefault();
-
       event.stopPropagation();
 
 
@@ -2255,9 +2061,7 @@ function setupAuth() {
 
         await signupUser();
 
-      }
-
-      else {
+      } else {
 
         await loginUser();
 
@@ -2267,16 +2071,11 @@ function setupAuth() {
   );
 
 
-  /* -----------------------------------------
-     SWITCH LOGIN / SIGNUP
-     ----------------------------------------- */
-
   authSwitch?.addEventListener(
     "click",
     (event) => {
 
       event.preventDefault();
-
       event.stopPropagation();
 
 
@@ -2287,10 +2086,6 @@ function setupAuth() {
     }
   );
 
-
-  /* -----------------------------------------
-     FORGOT PASSWORD
-     ----------------------------------------- */
 
   forgotPassword?.addEventListener(
     "click",
@@ -2312,11 +2107,7 @@ function setupAuth() {
 
 
       const email =
-        (
-          $("#authEmail")
-            ?.value ||
-          ""
-        )
+        ($("#authEmail")?.value || "")
           .trim()
           .toLowerCase();
 
@@ -2343,8 +2134,7 @@ function setupAuth() {
         const {
           error
         } =
-          await supabaseClient
-            .auth
+          await supabaseClient.auth
             .resetPasswordForEmail(
               email,
               {
@@ -2357,9 +2147,7 @@ function setupAuth() {
 
 
         if (error) {
-
           throw error;
-
         }
 
 
@@ -2367,9 +2155,7 @@ function setupAuth() {
           "Password reset email sent."
         );
 
-      }
-
-      catch (error) {
+      } catch (error) {
 
         console.error(
           "Password reset error:",
@@ -2392,7 +2178,7 @@ function setupAuth() {
 
 
 /* =========================================================
-   CHECK LOGIN / CURRENT SESSION
+   CHECK LOGIN
    ========================================================= */
 
 async function checkLogin() {
@@ -2412,21 +2198,16 @@ async function checkLogin() {
       data,
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .getSession();
 
 
     if (error) {
-
       throw error;
-
     }
 
 
-    if (
-      data?.session?.user
-    ) {
+    if (data?.session?.user) {
 
       currentUser =
         data.session.user;
@@ -2438,24 +2219,20 @@ async function checkLogin() {
 
     }
 
+
     else {
 
-      currentUser =
-        null;
+      currentUser = null;
 
-      isAdmin =
-        false;
+      isAdmin = false;
 
-      credits =
-        0;
+      credits = 0;
 
       showLogin();
 
     }
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Session check failed:",
@@ -2463,14 +2240,11 @@ async function checkLogin() {
     );
 
 
-    currentUser =
-      null;
+    currentUser = null;
 
-    isAdmin =
-      false;
+    isAdmin = false;
 
-    credits =
-      0;
+    credits = 0;
 
     showLogin();
 
@@ -2486,22 +2260,15 @@ async function checkLogin() {
 function setupAuthStateListener() {
 
   if (!supabaseClient) {
-
     return;
-
   }
 
 
   supabaseClient.auth
     .onAuthStateChange(
-      (
-        event,
-        session
-      ) => {
+      (event, session) => {
 
-        if (
-          session?.user
-        ) {
+        if (session?.user) {
 
           currentUser =
             session.user;
@@ -2516,9 +2283,7 @@ function setupAuthStateListener() {
 
 
           /*
-             Use setTimeout so Supabase
-             auth event does not get blocked
-             by database requests.
+             Give Supabase auth state time to finish.
           */
 
           setTimeout(
@@ -2534,22 +2299,18 @@ function setupAuthStateListener() {
 
         }
 
+
         else {
 
-          currentUser =
-            null;
+          currentUser = null;
 
-          isAdmin =
-            false;
+          isAdmin = false;
 
-          credits =
-            0;
+          credits = 0;
 
           hideAdminNav();
 
-          updateRoleUI(
-            null
-          );
+          updateRoleUI(null);
 
           showLogin();
 
@@ -2574,43 +2335,33 @@ async function logout() {
       const {
         error
       } =
-        await supabaseClient
-          .auth
+        await supabaseClient.auth
           .signOut();
 
 
       if (error) {
-
         throw error;
-
       }
 
     }
 
 
-    currentUser =
-      null;
+    currentUser = null;
 
-    isAdmin =
-      false;
+    isAdmin = false;
 
-    credits =
-      0;
+    credits = 0;
 
 
     hideAdminNav();
 
-    updateRoleUI(
-      null
-    );
+    updateRoleUI(null);
 
     clearLoginFields();
 
     showLogin();
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Logout error:",
@@ -2633,12 +2384,23 @@ window.logout =
 
 
 /* =========================================================
+   HIDE ADMIN NAV
+   ========================================================= */
+
+function hideAdminNav() {
+
+  $("#adminNav")
+    ?.classList
+    .add("hidden");
+
+}
+
+
+/* =========================================================
    MODE
    ========================================================= */
 
-function setMode(
-  newMode
-) {
+function setMode(newMode) {
 
   mode =
     newMode;
@@ -2650,8 +2412,7 @@ function setMode(
 
         element.classList.toggle(
           "active",
-          element.dataset.mode ===
-            newMode
+          element.dataset.mode === newMode
         );
 
       }
@@ -2664,8 +2425,7 @@ function setMode(
 
         element.classList.toggle(
           "active",
-          element.dataset.mode ===
-            newMode
+          element.dataset.mode === newMode
         );
 
       }
@@ -2693,9 +2453,7 @@ function setMode(
       "image",
       "textimage",
       "video"
-    ].includes(
-      newMode
-    );
+    ].includes(newMode);
 
 
   upload?.classList.toggle(
@@ -2778,23 +2536,17 @@ function showDashboard() {
 
   $("#accountPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $("#adminPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $(".content")
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 
   updateCreditUI();
@@ -2806,29 +2558,21 @@ function showDashboard() {
    ACCOUNT
    ========================================================= */
 
-function showAccount(
-  page
-) {
+function showAccount(page) {
 
   $("#accountPage")
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 
   $(".content")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $("#adminPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   [
@@ -2841,9 +2585,7 @@ function showAccount(
 
         $(`#${pageName}Page`)
           ?.classList
-          .add(
-            "hidden"
-          );
+          .add("hidden");
 
       }
     );
@@ -2851,9 +2593,7 @@ function showAccount(
 
   $(`#${page}Page`)
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 
   const title =
@@ -2863,9 +2603,7 @@ function showAccount(
   if (title) {
 
     title.textContent =
-      page
-        .charAt(0)
-        .toUpperCase() +
+      page.charAt(0).toUpperCase() +
       page.slice(1);
 
   }
@@ -2879,9 +2617,7 @@ function showAccount(
 
 function showAdminPage() {
 
-  if (
-    !isCurrentAdmin()
-  ) {
+  if (!isCurrentAdmin()) {
 
     alert(
       "Admin access required."
@@ -2892,37 +2628,27 @@ function showAdminPage() {
   }
 
 
-  isAdmin =
-    true;
+  isAdmin = true;
 
-  credits =
-    Infinity;
+  credits = Infinity;
 
 
   $(".content")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $("#accountPage")
     ?.classList
-    .add(
-      "hidden"
-    );
+    .add("hidden");
 
 
   $("#adminPage")
     ?.classList
-    .remove(
-      "hidden"
-    );
+    .remove("hidden");
 
 
-  if (
-    $("#adminRole")
-  ) {
+  if ($("#adminRole")) {
 
     $("#adminRole")
       .textContent =
@@ -2931,9 +2657,7 @@ function showAdminPage() {
   }
 
 
-  if (
-    $("#adminStatus")
-  ) {
+  if ($("#adminStatus")) {
 
     $("#adminStatus")
       .textContent =
@@ -2942,9 +2666,7 @@ function showAdminPage() {
   }
 
 
-  if (
-    $("#adminEmail")
-  ) {
+  if ($("#adminEmail")) {
 
     $("#adminEmail")
       .textContent =
@@ -2968,9 +2690,6 @@ function showAdminPage() {
 
   }
 
-
-  updateCreditUI();
-
 }
 
 
@@ -2989,11 +2708,9 @@ function scrollToPricing() {
       $("#pricing")
         ?.scrollIntoView({
 
-          behavior:
-            "smooth",
+          behavior: "smooth",
 
-          block:
-            "start"
+          block: "start"
 
         });
 
@@ -3012,13 +2729,9 @@ window.scrollToPricing =
    BUY
    ========================================================= */
 
-function buy(
-  plan
-) {
+function buy(plan) {
 
-  if (
-    isCurrentAdmin()
-  ) {
+  if (isCurrentAdmin()) {
 
     alert(
       "Admin account already has Unlimited Credits and all premium features unlocked."
@@ -3038,6 +2751,516 @@ function buy(
 
 window.buy =
   buy;
+
+
+/* =========================================================
+   RECENT VIDEOS
+   =========================================================
+
+   TABLE REQUIRED:
+
+   videos
+
+   Suggested columns:
+
+   id
+   user_id
+   title
+   mode
+   prompt
+   status
+   video_url
+   thumbnail_url
+   created_at
+
+   IMPORTANT:
+   user_id MUST contain currentUser.id
+   ========================================================= */
+
+
+/* =========================================================
+   LOAD RECENT VIDEOS
+   ========================================================= */
+
+async function loadRecentVideos() {
+
+  const list =
+    $("#recentList");
+
+
+  if (!list) {
+    return;
+  }
+
+
+  /*
+     Not logged in
+  */
+
+  if (!currentUser) {
+
+    return;
+
+  }
+
+
+  /*
+     Show loading
+  */
+
+  list.innerHTML = `
+    <div class="empty">
+      Loading recent videos...
+    </div>
+  `;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("videos")
+        .select(
+          "id, title, mode, prompt, status, video_url, thumbnail_url, created_at"
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+
+      console.error(
+        "Load recent videos error:",
+        error
+      );
+
+
+      list.innerHTML = `
+        <div class="empty">
+          No recent videos found.
+        </div>
+      `;
+
+
+      return;
+
+    }
+
+
+    /*
+       EMPTY
+    */
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      list.innerHTML = `
+        <div class="empty">
+          No recent videos yet.
+        </div>
+      `;
+
+
+      return;
+
+    }
+
+
+    /*
+       RENDER
+    */
+
+    list.innerHTML = "";
+
+
+    data.forEach(
+      (video) => {
+
+        renderRecentVideo(
+          video,
+          false
+        );
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Recent videos exception:",
+      error
+    );
+
+
+    list.innerHTML = `
+      <div class="empty">
+        No recent videos found.
+      </div>
+    `;
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER RECENT VIDEO
+   ========================================================= */
+
+function renderRecentVideo(
+  video,
+  prepend = true
+) {
+
+  const list =
+    $("#recentList");
+
+
+  if (!list) {
+    return;
+  }
+
+
+  list
+    .querySelector(".empty")
+    ?.remove();
+
+
+  const item =
+    document.createElement("div");
+
+
+  item.className =
+    "video-item";
+
+
+  /*
+     VIDEO LABEL
+  */
+
+  const label =
+    getVideoLabel(
+      video.mode
+    );
+
+
+  /*
+     DATE
+  */
+
+  let dateText =
+    "";
+
+
+  if (video.created_at) {
+
+    try {
+
+      dateText =
+        new Date(
+          video.created_at
+        ).toLocaleString();
+
+    } catch {
+
+      dateText = "";
+
+    }
+
+  }
+
+
+  /*
+     THUMBNAIL
+  */
+
+  let thumbHTML =
+    `<div class="thumb"></div>`;
+
+
+  if (video.thumbnail_url) {
+
+    thumbHTML =
+      `
+        <div
+          class="thumb"
+          style="
+            background-image:url('${escapeHTML(video.thumbnail_url)}');
+            background-size:cover;
+            background-position:center;
+          "
+        ></div>
+      `;
+
+  }
+
+
+  /*
+     STATUS
+  */
+
+  const status =
+    video.status ||
+    "completed";
+
+
+  /*
+     VIDEO LINK
+  */
+
+  let titleHTML =
+    `<b>${escapeHTML(video.title || label)}</b>`;
+
+
+  if (video.video_url) {
+
+    titleHTML =
+      `
+        <b>${escapeHTML(video.title || label)}</b>
+        <a
+          href="${escapeHTML(video.video_url)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="display:block;margin-top:5px;"
+        >
+          ▶ Open Video
+        </a>
+      `;
+
+  }
+
+
+  item.innerHTML = `
+    ${thumbHTML}
+
+    <div>
+      ${titleHTML}
+
+      <small>
+        ✓ ${escapeHTML(status)}
+        ${dateText ? ` • ${escapeHTML(dateText)}` : ""}
+      </small>
+    </div>
+  `;
+
+
+  if (prepend) {
+
+    list.prepend(item);
+
+  } else {
+
+    list.appendChild(item);
+
+  }
+
+}
+
+
+/* =========================================================
+   GET VIDEO LABEL
+   ========================================================= */
+
+function getVideoLabel(videoMode) {
+
+  switch (videoMode) {
+
+    case "voice":
+      return "AI Voice Over";
+
+    case "music":
+      return "AI Music";
+
+    case "soundfx":
+      return "Sound Effects";
+
+    case "subtitle":
+      return "AI Subtitles";
+
+    case "thumbnail":
+      return "AI Thumbnail";
+
+    case "story":
+      return "AI Story Video";
+
+    case "image":
+      return "AI Image Video";
+
+    case "textimage":
+      return "AI Image Video";
+
+    case "video":
+      return "AI Video Edit";
+
+    default:
+      return "AI Video";
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE RECENT VIDEO
+   ========================================================= */
+
+async function saveRecentVideo(videoData) {
+
+  if (
+    !supabaseClient ||
+    !currentUser
+  ) {
+
+    return null;
+
+  }
+
+
+  if (isCurrentAdmin()) {
+
+    /*
+       Admin can still have recent videos.
+       They are saved under admin user_id.
+    */
+
+  }
+
+
+  try {
+
+    const record = {
+
+      user_id:
+        currentUser.id,
+
+      title:
+        videoData.title ||
+        getVideoLabel(videoData.mode),
+
+      mode:
+        videoData.mode ||
+        mode,
+
+      prompt:
+        videoData.prompt ||
+        "",
+
+      status:
+        videoData.status ||
+        "completed",
+
+      video_url:
+        videoData.video_url ||
+        null,
+
+      thumbnail_url:
+        videoData.thumbnail_url ||
+        null
+
+    };
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("videos")
+        .insert(record)
+        .select()
+        .single();
+
+
+    if (error) {
+
+      console.error(
+        "Save recent video error:",
+        error
+      );
+
+      return null;
+
+    }
+
+
+    /*
+       ADD TO UI
+    */
+
+    renderRecentVideo(
+      data,
+      true
+    );
+
+
+    return data;
+
+  } catch (error) {
+
+    console.error(
+      "saveRecentVideo exception:",
+      error
+    );
+
+    return null;
+
+  }
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function escapeHTML(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+
+  return String(value)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
 
 
 /* =========================================================
@@ -3062,9 +3285,9 @@ function setupDashboard() {
     $("#moreMenu");
 
 
-  /* -----------------------------------------
+  /*
      PROMPT COUNTER
-     ----------------------------------------- */
+  */
 
   promptBox?.addEventListener(
     "input",
@@ -3081,9 +3304,9 @@ function setupDashboard() {
   );
 
 
-  /* -----------------------------------------
+  /*
      MODE BUTTONS
-     ----------------------------------------- */
+  */
 
   $$(".mode, .sidebar a[data-mode]")
     .forEach(
@@ -3106,20 +3329,14 @@ function setupDashboard() {
                 "male",
                 "young",
                 "narrator"
-              ].includes(
-                selectedMode
-              )
+              ].includes(selectedMode)
             ) {
 
-              setMode(
-                "voice"
-              );
+              setMode("voice");
 
             }
 
-            else if (
-              selectedMode
-            ) {
+            else if (selectedMode) {
 
               setMode(
                 selectedMode
@@ -3130,9 +3347,7 @@ function setupDashboard() {
 
             moreMenu
               ?.classList
-              .add(
-                "hidden"
-              );
+              .add("hidden");
 
           }
         );
@@ -3141,9 +3356,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      MORE MENU
-     ----------------------------------------- */
+  */
 
   moreTools?.addEventListener(
     "click",
@@ -3154,24 +3369,18 @@ function setupDashboard() {
 
       moreMenu
         ?.classList
-        .toggle(
-          "hidden"
-        );
+        .toggle("hidden");
 
 
       const button =
-        moreTools.querySelector(
-          "b"
-        );
+        moreTools.querySelector("b");
 
 
       if (button) {
 
         button.textContent =
           moreMenu?.classList
-            .contains(
-              "hidden"
-            )
+            .contains("hidden")
             ? "⌄"
             : "⌃";
 
@@ -3181,9 +3390,9 @@ function setupDashboard() {
   );
 
 
-  /* -----------------------------------------
+  /*
      ACCOUNT / ADMIN NAVIGATION
-     ----------------------------------------- */
+  */
 
   $$("[data-page]")
     .forEach(
@@ -3200,10 +3409,7 @@ function setupDashboard() {
               element.dataset.page;
 
 
-            if (
-              page ===
-              "dashboard"
-            ) {
+            if (page === "dashboard") {
 
               showDashboard();
 
@@ -3212,10 +3418,7 @@ function setupDashboard() {
             }
 
 
-            if (
-              page ===
-              "admin"
-            ) {
+            if (page === "admin") {
 
               showAdminPage();
 
@@ -3226,9 +3429,7 @@ function setupDashboard() {
 
             if (page) {
 
-              showAccount(
-                page
-              );
+              showAccount(page);
 
             }
 
@@ -3239,9 +3440,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      BACK DASHBOARD
-     ----------------------------------------- */
+  */
 
   $("#backDashboard")
     ?.addEventListener(
@@ -3256,9 +3457,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      BACK ADMIN
-     ----------------------------------------- */
+  */
 
   $("#backFromAdmin")
     ?.addEventListener(
@@ -3273,9 +3474,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      CHOICES
-     ----------------------------------------- */
+  */
 
   $$(".choices button")
     .forEach(
@@ -3289,25 +3490,19 @@ function setupDashboard() {
 
 
             button.parentElement
-              ?.querySelectorAll(
-                "button"
-              )
+              ?.querySelectorAll("button")
               .forEach(
                 (item) => {
 
                   item.classList
-                    .remove(
-                      "selected"
-                    );
+                    .remove("selected");
 
                 }
               );
 
 
             button.classList
-              .add(
-                "selected"
-              );
+              .add("selected");
 
           }
         );
@@ -3316,9 +3511,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      VOICE CHOICES
-     ----------------------------------------- */
+  */
 
   $$(".voice-choice")
     .forEach(
@@ -3336,18 +3531,14 @@ function setupDashboard() {
                 (item) => {
 
                   item.classList
-                    .remove(
-                      "selected"
-                    );
+                    .remove("selected");
 
                 }
               );
 
 
             button.classList
-              .add(
-                "selected"
-              );
+              .add("selected");
 
           }
         );
@@ -3356,9 +3547,9 @@ function setupDashboard() {
     );
 
 
-  /* -----------------------------------------
+  /*
      FILE UPLOAD
-     ----------------------------------------- */
+  */
 
   input?.addEventListener(
     "change",
@@ -3366,15 +3557,12 @@ function setupDashboard() {
 
       if (
         input.files &&
-        input.files.length >
-          0
+        input.files.length > 0
       ) {
 
         const small =
           $("#uploadLabel")
-            ?.querySelector(
-              "small"
-            );
+            ?.querySelector("small");
 
 
         if (small) {
@@ -3390,9 +3578,9 @@ function setupDashboard() {
   );
 
 
-  /* =====================================================
+  /*
      GENERATE
-     ===================================================== */
+  */
 
   $("#generate")
     ?.addEventListener(
@@ -3402,9 +3590,9 @@ function setupDashboard() {
         event.preventDefault();
 
 
-        /* ---------------------------------------
+        /*
            LOGIN CHECK
-           --------------------------------------- */
+        */
 
         if (!currentUser) {
 
@@ -3419,9 +3607,9 @@ function setupDashboard() {
         }
 
 
-        /* ---------------------------------------
+        /*
            COST
-           --------------------------------------- */
+        */
 
         const cost =
           mode === "voice"
@@ -3437,9 +3625,9 @@ function setupDashboard() {
             : 20;
 
 
-        /* ---------------------------------------
+        /*
            ADMIN
-           --------------------------------------- */
+        */
 
         if (
           !isAdmin &&
@@ -3457,18 +3645,16 @@ function setupDashboard() {
         }
 
 
-        /* ---------------------------------------
+        /*
            REQUIRED MEDIA
-           --------------------------------------- */
+        */
 
         if (
           [
             "image",
             "textimage",
             "video"
-          ].includes(
-            mode
-          ) &&
+          ].includes(mode) &&
           !input?.files?.length
         ) {
 
@@ -3481,9 +3667,9 @@ function setupDashboard() {
         }
 
 
-        /* ---------------------------------------
+        /*
            REQUIRED PROMPT
-           --------------------------------------- */
+        */
 
         if (
           !promptBox?.value.trim()
@@ -3500,59 +3686,17 @@ function setupDashboard() {
         }
 
 
-        /* =================================================
-           DEDUCT CREDITS
-           ================================================= */
+        /*
+           DEDUCT CREDITS FIRST
+        */
 
         if (!isAdmin) {
 
-          /*
-             Save old value so we can rollback
-             if database update fails.
-          */
-
-          const oldCredits =
-            credits;
+          const deducted =
+            await deductCredits(cost);
 
 
-          credits =
-            Math.max(
-              0,
-              credits - cost
-            );
-
-
-          updateCreditUI();
-
-
-          /*
-             SAVE TO SUPABASE
-          */
-
-          const saved =
-            await saveUserCredits();
-
-
-          /*
-             DATABASE SAVE FAILED
-          */
-
-          if (!saved) {
-
-            /*
-               Rollback local value.
-            */
-
-            credits =
-              oldCredits;
-
-
-            updateCreditUI();
-
-
-            alert(
-              "Credits could not be saved. Please try again."
-            );
+          if (!deducted) {
 
             return;
 
@@ -3560,33 +3704,21 @@ function setupDashboard() {
 
         }
 
-        else {
 
-          credits =
-            Infinity;
-
-          updateCreditUI();
-
-        }
-
-
-        /* ---------------------------------------
+        /*
            GENERATE BUTTON
-           --------------------------------------- */
+        */
 
         const button =
           $("#generate");
 
 
         if (!button) {
-
           return;
-
         }
 
 
-        button.disabled =
-          true;
+        button.disabled = true;
 
 
         button.innerHTML =
@@ -3595,12 +3727,12 @@ function setupDashboard() {
             : "⏳ GENERATING VIDEO…";
 
 
-        /* ---------------------------------------
+        /*
            DEMO GENERATION
-           --------------------------------------- */
+        */
 
         setTimeout(
-          () => {
+          async () => {
 
             button.disabled =
               false;
@@ -3621,71 +3753,31 @@ function setupDashboard() {
             updateCreditUI();
 
 
-            const list =
-              $("#recentList");
+            /*
+               SAVE PERMANENT RECENT VIDEO
+            */
 
+            await saveRecentVideo({
 
-            if (!list) {
+              title:
+                getVideoLabel(mode),
 
-              return;
+              mode:
+                mode,
 
-            }
+              prompt:
+                promptBox?.value.trim() || "",
 
+              status:
+                "Demo complete",
 
-            list
-              .querySelector(
-                ".empty"
-              )
-              ?.remove();
+              video_url:
+                null,
 
+              thumbnail_url:
+                null
 
-            const item =
-              document.createElement(
-                "div"
-              );
-
-
-            item.className =
-              "video-item";
-
-
-            const label =
-              mode === "voice"
-                ? "AI Voice Over"
-                : mode === "music"
-                ? "AI Music"
-                : mode === "soundfx"
-                ? "Sound Effects"
-                : mode === "subtitle"
-                ? "AI Subtitles"
-                : mode === "thumbnail"
-                ? "AI Thumbnail"
-                : mode === "story"
-                ? "AI Story Video"
-                : "AI Video";
-
-
-            item.innerHTML = `
-              <div class="thumb"></div>
-
-              <div>
-                <b>${label}</b>
-
-                <small>
-                  ✓ Demo complete • ${
-                    isAdmin
-                      ? "Unlimited Credits"
-                      : `${cost} credits`
-                  }
-                </small>
-              </div>
-            `;
-
-
-            list.prepend(
-              item
-            );
-
+            });
 
           },
           1800
@@ -3695,9 +3787,9 @@ function setupDashboard() {
     );
 
 
-  /* =====================================================
+  /*
      ADMIN BUTTONS
-     ===================================================== */
+  */
 
   const adminButtons = [
 
@@ -3731,9 +3823,7 @@ function setupDashboard() {
         "click",
         () => {
 
-          if (
-            !isCurrentAdmin()
-          ) {
+          if (!isCurrentAdmin()) {
 
             alert(
               "Admin access required."
@@ -3759,9 +3849,7 @@ function setupDashboard() {
           }
 
 
-          alert(
-            message
-          );
+          alert(message);
 
         }
       );
@@ -3770,9 +3858,9 @@ function setupDashboard() {
   );
 
 
-  /* =====================================================
+  /*
      SAVE BUTTONS
-     ===================================================== */
+  */
 
   $$(".save-btn")
     .forEach(
@@ -3782,25 +3870,16 @@ function setupDashboard() {
           "click",
           async () => {
 
-            const saved =
-              await saveUserCredits();
+            /*
+               SAVE CURRENT DATABASE BALANCE
+            */
+
+            await saveUserCredits();
 
 
-            if (saved) {
-
-              alert(
-                "Settings saved successfully."
-              );
-
-            }
-
-            else {
-
-              alert(
-                "Could not save changes."
-              );
-
-            }
+            alert(
+              "Settings saved successfully."
+            );
 
           }
         );
@@ -3809,9 +3888,9 @@ function setupDashboard() {
     );
 
 
-  /* =====================================================
+  /*
      UPGRADE BUTTONS
-     ===================================================== */
+  */
 
   $$(".side-card button")
     .forEach(
@@ -3827,9 +3906,7 @@ function setupDashboard() {
                 "Admin account already has Unlimited Credits and all features unlocked."
               );
 
-            }
-
-            else {
+            } else {
 
               scrollToPricing();
 
@@ -3852,9 +3929,7 @@ function createSupabaseClient() {
 
   if (
     !window.supabase ||
-    typeof window.supabase
-      .createClient !==
-      "function"
+    typeof window.supabase.createClient !== "function"
   ) {
 
     console.error(
@@ -3868,35 +3943,28 @@ function createSupabaseClient() {
 
   try {
 
-    return window.supabase
-      .createClient(
+    return window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY,
+      {
 
-        SUPABASE_URL,
+        auth: {
 
-        SUPABASE_KEY,
+          persistSession:
+            true,
 
-        {
+          autoRefreshToken:
+            true,
 
-          auth: {
-
-            persistSession:
-              true,
-
-            autoRefreshToken:
-              true,
-
-            detectSessionInUrl:
-              true
-
-          }
+          detectSessionInUrl:
+            true
 
         }
 
-      );
+      }
+    );
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(
       "Supabase client creation failed:",
@@ -3921,22 +3989,20 @@ async function initializeVikyAI() {
   );
 
 
-  /* -----------------------------------------
-     EMPTY LOGIN FIELDS
-     ----------------------------------------- */
+  /*
+     LOGIN FIELDS
+  */
 
   forceEmptyLoginFields();
 
   clearLoginFields();
 
-  setAuthMode(
-    false
-  );
+  setAuthMode(false);
 
 
-  /* -----------------------------------------
+  /*
      SUPABASE
-     ----------------------------------------- */
+  */
 
   supabaseClient =
     createSupabaseClient();
@@ -3951,9 +4017,9 @@ async function initializeVikyAI() {
   }
 
 
-  /* -----------------------------------------
+  /*
      SETUP
-     ----------------------------------------- */
+  */
 
   setupAuth();
 
@@ -3962,23 +4028,20 @@ async function initializeVikyAI() {
   setupAuthStateListener();
 
 
-  /* -----------------------------------------
-     CHECK CURRENT SESSION
-     ----------------------------------------- */
+  /*
+     CHECK SESSION
+  */
 
   await checkLogin();
 
 
-  /* -----------------------------------------
-     FINAL LOGIN FIELD PROTECTION
-     ----------------------------------------- */
+  /*
+     FINAL LOGIN FIELD CLEANUP
+  */
 
   if (
     $("#authScreen") &&
-    $("#authScreen")
-      .style
-      .display !==
-      "none"
+    $("#authScreen").style.display !== "none"
   ) {
 
     forceEmptyLoginFields();
@@ -3994,7 +4057,7 @@ async function initializeVikyAI() {
 
 
 /* =========================================================
-   START APPLICATION
+   START
    ========================================================= */
 
 if (
