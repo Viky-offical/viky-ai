@@ -1,6 +1,7 @@
 /* =========================================================
    VIKY AI
-   SUPABASE AUTH + ADMIN + DASHBOARD
+   SUPABASE AUTH + ADMIN + USER ROLE
+   SESSION LOGIN
    COMPLETE app.js
    ========================================================= */
 
@@ -18,7 +19,7 @@ const SUPABASE_KEY =
 
 /* =========================================================
    ADMIN EMAIL
-   THIS EMAIL IS ALWAYS ADMIN
+   ONLY THIS EMAIL IS ADMIN
    ========================================================= */
 
 const ADMIN_EMAIL =
@@ -80,7 +81,7 @@ function showAuthMessage(message, isError = false) {
 
 
 /* =========================================================
-   SHOW LOGIN SCREEN
+   SHOW LOGIN
    ========================================================= */
 
 function showLogin() {
@@ -98,7 +99,7 @@ function showLogin() {
 
 
 /* =========================================================
-   HIDE LOGIN SCREEN
+   HIDE LOGIN
    ========================================================= */
 
 function hideLogin() {
@@ -112,6 +113,160 @@ function hideLogin() {
 
   authScreen.style.display =
     "none";
+}
+
+
+/* =========================================================
+   HIDE ADMIN NAV
+   ========================================================= */
+
+function hideAdminNav() {
+
+  const adminNav =
+    $("#adminNav");
+
+  if (!adminNav) {
+    return;
+  }
+
+  adminNav.classList.add(
+    "hidden"
+  );
+}
+
+
+/* =========================================================
+   UPDATE USER PROFILE
+   ========================================================= */
+
+function updateUserProfile() {
+
+  const roleElement =
+    $("#userRole");
+
+  const roleDot =
+    $("#userRoleDot");
+
+  const nameElement =
+    $("#userDisplayName");
+
+  const avatarElement =
+    $("#userAvatar");
+
+  const profileEmail =
+    $("#profileEmail");
+
+  const profileName =
+    $("#profileName");
+
+
+  if (!currentUser) {
+
+    if (roleElement) {
+      roleElement.textContent =
+        "User";
+    }
+
+    if (roleDot) {
+      roleDot.classList.remove(
+        "admin"
+      );
+    }
+
+    if (nameElement) {
+      nameElement.textContent =
+        "Viky User";
+    }
+
+    if (avatarElement) {
+      avatarElement.textContent =
+        "V";
+    }
+
+    if (profileEmail) {
+      profileEmail.value =
+        "";
+    }
+
+    return;
+  }
+
+
+  const email =
+    (currentUser.email || "")
+      .trim()
+      .toLowerCase();
+
+
+  const adminEmail =
+    ADMIN_EMAIL
+      .trim()
+      .toLowerCase();
+
+
+  const admin =
+    email === adminEmail;
+
+
+  const userName =
+    currentUser.user_metadata?.full_name ||
+    email.split("@")[0] ||
+    "Viky User";
+
+
+  if (nameElement) {
+
+    nameElement.textContent =
+      userName;
+
+  }
+
+
+  if (avatarElement) {
+
+    avatarElement.textContent =
+      userName
+        .charAt(0)
+        .toUpperCase();
+
+  }
+
+
+  if (roleElement) {
+
+    roleElement.textContent =
+      admin
+        ? "Admin"
+        : "User";
+
+  }
+
+
+  if (roleDot) {
+
+    roleDot.classList.toggle(
+      "admin",
+      admin
+    );
+
+  }
+
+
+  if (profileEmail) {
+
+    profileEmail.value =
+      currentUser.email || "";
+
+  }
+
+
+  if (profileName) {
+
+    profileName.value =
+      userName;
+
+  }
+
 }
 
 
@@ -142,8 +297,11 @@ async function showApp() {
 
 
     if (!data?.user) {
+
       showLogin();
+
       return;
+
     }
 
 
@@ -151,27 +309,7 @@ async function showApp() {
       data.user;
 
 
-    const userName =
-      data.user.user_metadata?.full_name ||
-      data.user.email?.split("@")[0] ||
-      "Viky User";
-
-
-    document
-      .querySelectorAll("body *")
-      .forEach((element) => {
-
-        if (
-          element.children.length === 0 &&
-          element.textContent.trim() === "Viky User"
-        ) {
-
-          element.textContent =
-            userName;
-
-        }
-
-      });
+    updateUserProfile();
 
 
   } catch (error) {
@@ -181,40 +319,15 @@ async function showApp() {
       error
     );
 
+    showLogin();
+
   }
-
-}
-
-
-/* =========================================================
-   HIDE ADMIN NAV
-   ========================================================= */
-
-function hideAdminNav() {
-
-  const adminNav =
-    $("#adminNav");
-
-  if (!adminNav) {
-    return;
-  }
-
-  adminNav.classList.add(
-    "hidden"
-  );
 
 }
 
 
 /* =========================================================
    CHECK ADMIN ACCESS
-   =========================================================
-   
-   ONLY THIS EMAIL IS ADMIN:
-
-   daimvirk555@gmail.com
-
-   ALL OTHER USERS ARE NORMAL USERS.
    ========================================================= */
 
 async function checkAdminAccess() {
@@ -254,6 +367,8 @@ async function checkAdminAccess() {
 
       isAdmin = false;
 
+      updateUserProfile();
+
       hideAdminNav();
 
       return;
@@ -263,6 +378,9 @@ async function checkAdminAccess() {
 
     currentUser =
       user;
+
+
+    updateUserProfile();
 
 
     const userEmail =
@@ -297,7 +415,7 @@ async function checkAdminAccess() {
       if (adminRole) {
 
         adminRole.textContent =
-          "admin";
+          "Admin";
 
       }
 
@@ -382,116 +500,88 @@ function setAuthMode(isSignup) {
   if (signupMode) {
 
     if (authTitle) {
-
       authTitle.textContent =
         "Create your account";
-
     }
 
 
     if (authSubtitle) {
-
       authSubtitle.textContent =
         "Join Viky AI and start creating";
-
     }
 
 
     if (authName) {
-
       authName.style.display =
         "block";
-
     }
 
 
     if (authButton) {
-
       authButton.textContent =
         "Create Account";
-
     }
 
 
     if (authSwitchText) {
-
       authSwitchText.textContent =
         "Already have an account?";
-
     }
 
 
     if (authSwitch) {
-
       authSwitch.textContent =
         "Sign In";
-
     }
 
 
     if (forgotPassword) {
-
       forgotPassword.style.display =
         "none";
-
     }
 
 
   } else {
 
     if (authTitle) {
-
       authTitle.textContent =
         "Welcome to Viky AI";
-
     }
 
 
     if (authSubtitle) {
-
       authSubtitle.textContent =
         "Sign in to continue";
-
     }
 
 
     if (authName) {
-
       authName.style.display =
         "none";
-
     }
 
 
     if (authButton) {
-
       authButton.textContent =
         "Sign In";
-
     }
 
 
     if (authSwitchText) {
-
       authSwitchText.textContent =
         "Don't have an account?";
-
     }
 
 
     if (authSwitch) {
-
       authSwitch.textContent =
         "Create Account";
-
     }
 
 
     if (forgotPassword) {
-
       forgotPassword.style.display =
         "block";
-
     }
 
   }
@@ -559,10 +649,7 @@ async function loginUser() {
 
 
   if (button) {
-
-    button.disabled =
-      true;
-
+    button.disabled = true;
   }
 
 
@@ -607,14 +694,17 @@ async function loginUser() {
       data.user;
 
 
-    showAuthMessage(
-      "Login successful!"
-    );
+    updateUserProfile();
 
 
     await showApp();
 
     await checkAdminAccess();
+
+
+    showAuthMessage(
+      "Login successful!"
+    );
 
 
   } catch (error) {
@@ -625,13 +715,9 @@ async function loginUser() {
     );
 
 
-    const message =
-      error?.message ||
-      "Login failed. Please try again.";
-
-
     showAuthMessage(
-      message,
+      error?.message ||
+      "Login failed. Please try again.",
       true
     );
 
@@ -639,10 +725,7 @@ async function loginUser() {
   } finally {
 
     if (button) {
-
-      button.disabled =
-        false;
-
+      button.disabled = false;
     }
 
   }
@@ -736,10 +819,7 @@ async function signupUser() {
 
 
   if (button) {
-
-    button.disabled =
-      true;
-
+    button.disabled = true;
   }
 
 
@@ -782,21 +862,13 @@ async function signupUser() {
     }
 
 
-    /*
-       If Supabase Email Confirmation
-       is disabled, session will exist
-       immediately.
-    */
-
     if (data?.session && data?.user) {
 
       currentUser =
         data.user;
 
 
-      showAuthMessage(
-        "Account created successfully!"
-      );
+      updateUserProfile();
 
 
       await showApp();
@@ -804,13 +876,12 @@ async function signupUser() {
       await checkAdminAccess();
 
 
-    } else {
+      showAuthMessage(
+        "Account created successfully!"
+      );
 
-      /*
-         If Email Confirmation is enabled,
-         Supabase requires the user to
-         verify the email first.
-      */
+
+    } else {
 
       showAuthMessage(
         "Account created. Please verify your email, then Sign In."
@@ -840,10 +911,7 @@ async function signupUser() {
   } finally {
 
     if (button) {
-
-      button.disabled =
-        false;
-
+      button.disabled = false;
     }
 
   }
@@ -869,10 +937,6 @@ function setupAuth() {
     $("#forgotPassword");
 
 
-  /* -------------------------------------------------------
-     LOGIN / SIGNUP SWITCH
-     ------------------------------------------------------- */
-
   authSwitch?.addEventListener(
     "click",
     (event) => {
@@ -888,10 +952,6 @@ function setupAuth() {
     }
   );
 
-
-  /* -------------------------------------------------------
-     LOGIN / SIGNUP BUTTON
-     ------------------------------------------------------- */
 
   authButton?.addEventListener(
     "click",
@@ -915,10 +975,6 @@ function setupAuth() {
     }
   );
 
-
-  /* -------------------------------------------------------
-     FORGOT PASSWORD
-     ------------------------------------------------------- */
 
   forgotPassword?.addEventListener(
     "click",
@@ -1012,7 +1068,7 @@ function setupAuth() {
 
 
 /* =========================================================
-   CHECK EXISTING LOGIN SESSION
+   CHECK LOGIN
    ========================================================= */
 
 async function checkLogin() {
@@ -1054,6 +1110,16 @@ async function checkLogin() {
 
     } else {
 
+      currentUser =
+        null;
+
+      isAdmin =
+        false;
+
+      updateUserProfile();
+
+      hideAdminNav();
+
       showLogin();
 
     }
@@ -1066,6 +1132,16 @@ async function checkLogin() {
       error
     );
 
+
+    currentUser =
+      null;
+
+    isAdmin =
+      false;
+
+    updateUserProfile();
+
+    hideAdminNav();
 
     showLogin();
 
@@ -1097,6 +1173,8 @@ function setupAuthStateListener() {
 
           hideLogin();
 
+          updateUserProfile();
+
 
           setTimeout(
             () => {
@@ -1115,6 +1193,8 @@ function setupAuthStateListener() {
 
           isAdmin =
             false;
+
+          updateUserProfile();
 
           hideAdminNav();
 
@@ -1141,6 +1221,8 @@ async function logout() {
 
     isAdmin =
       false;
+
+    updateUserProfile();
 
     showLogin();
 
@@ -1170,6 +1252,8 @@ async function logout() {
     isAdmin =
       false;
 
+
+    updateUserProfile();
 
     hideAdminNav();
 
@@ -1413,6 +1497,11 @@ function showAccount(page) {
 
   }
 
+
+  if (page === "profile") {
+    updateUserProfile();
+  }
+
 }
 
 
@@ -1440,7 +1529,23 @@ function showAdminPage() {
 
   $("#accountPage")
     ?.classList
-    .add("hidden");
+    .remove("hidden");
+
+
+  [
+    "profile",
+    "subscription",
+    "settings"
+  ]
+    .forEach(
+      (pageName) => {
+
+        $(`#${pageName}Page`)
+          ?.classList
+          .add("hidden");
+
+      }
+    );
 
 
   $("#adminPage")
@@ -1452,7 +1557,7 @@ function showAdminPage() {
 
     $("#adminRole")
       .textContent =
-      "admin";
+      "Admin";
 
   }
 
@@ -1539,10 +1644,6 @@ function setupDashboard() {
     $("#moreMenu");
 
 
-  /* -------------------------------------------------------
-     PROMPT COUNTER
-     ------------------------------------------------------- */
-
   promptBox?.addEventListener(
     "input",
     () => {
@@ -1557,10 +1658,6 @@ function setupDashboard() {
     }
   );
 
-
-  /* -------------------------------------------------------
-     MODE BUTTONS
-     ------------------------------------------------------- */
 
   $$(".mode, .sidebar a[data-mode]")
     .forEach(
@@ -1614,10 +1711,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     MORE MENU
-     ------------------------------------------------------- */
-
   moreTools?.addEventListener(
     "click",
     (event) => {
@@ -1647,10 +1740,6 @@ function setupDashboard() {
     }
   );
 
-
-  /* -------------------------------------------------------
-     ACCOUNT / ADMIN NAVIGATION
-     ------------------------------------------------------- */
 
   $$("[data-page]")
     .forEach(
@@ -1700,10 +1789,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     BACK DASHBOARD
-     ------------------------------------------------------- */
-
   $("#backDashboard")
     ?.addEventListener(
       "click",
@@ -1716,27 +1801,6 @@ function setupDashboard() {
       }
     );
 
-
-  /* -------------------------------------------------------
-     BACK ADMIN
-     ------------------------------------------------------- */
-
-  $("#backFromAdmin")
-    ?.addEventListener(
-      "click",
-      (event) => {
-
-        event.preventDefault();
-
-        showDashboard();
-
-      }
-    );
-
-
-  /* -------------------------------------------------------
-     CHOICES
-     ------------------------------------------------------- */
 
   $$(".choices button")
     .forEach(
@@ -1775,10 +1839,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     VOICE CHOICES
-     ------------------------------------------------------- */
-
   $$(".voice-choice")
     .forEach(
       (button) => {
@@ -1815,10 +1875,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     FILE UPLOAD
-     ------------------------------------------------------- */
-
   input?.addEventListener(
     "change",
     () => {
@@ -1845,10 +1901,6 @@ function setupDashboard() {
     }
   );
 
-
-  /* -------------------------------------------------------
-     GENERATE
-     ------------------------------------------------------- */
 
   $("#generate")
     ?.addEventListener(
@@ -2026,10 +2078,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     ADMIN USERS
-     ------------------------------------------------------- */
-
   $("#adminUsersBtn")
     ?.addEventListener(
       "click",
@@ -2054,10 +2102,6 @@ function setupDashboard() {
       }
     );
 
-
-  /* -------------------------------------------------------
-     ADMIN CREDITS
-     ------------------------------------------------------- */
 
   $("#adminCreditsBtn")
     ?.addEventListener(
@@ -2084,10 +2128,6 @@ function setupDashboard() {
     );
 
 
-  /* -------------------------------------------------------
-     ADMIN VIDEOS
-     ------------------------------------------------------- */
-
   $("#adminVideosBtn")
     ?.addEventListener(
       "click",
@@ -2112,10 +2152,6 @@ function setupDashboard() {
       }
     );
 
-
-  /* -------------------------------------------------------
-     ADMIN SETTINGS
-     ------------------------------------------------------- */
 
   $("#adminSettingsBtn")
     ?.addEventListener(
@@ -2155,11 +2191,6 @@ async function initializeVikyAI() {
   );
 
 
-  /*
-     Supabase CDN must already be loaded
-     before this app.js file.
-  */
-
   if (
     !window.supabase ||
     typeof window.supabase.createClient !==
@@ -2180,10 +2211,39 @@ async function initializeVikyAI() {
 
   try {
 
+    /*
+       IMPORTANT:
+       sessionStorage is used here.
+
+       This means the Supabase Auth session
+       is stored only for the current browser tab.
+
+       After the tab/browser session ends,
+       the user must login again.
+    */
+
     supabaseClient =
       window.supabase.createClient(
         SUPABASE_URL,
-        SUPABASE_KEY
+        SUPABASE_KEY,
+        {
+          auth: {
+
+            storage:
+              window.sessionStorage,
+
+            autoRefreshToken:
+              true,
+
+            persistSession:
+              true,
+
+            detectSessionInUrl:
+              true
+
+          }
+
+        }
       );
 
 
