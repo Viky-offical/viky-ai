@@ -1,8 +1,7 @@
 /* =========================================================
    VIKY AI
-   SUPABASE AUTH + ADMIN + USER
-   SESSION DOES NOT PERSIST AFTER PAGE CLOSE
-   ADMIN = daimvirk555@gmail.com
+   SUPABASE AUTH + ADMIN + USER + SESSION CONTROL
+   COMPLETE app.js
    ========================================================= */
 
 
@@ -19,6 +18,7 @@ const SUPABASE_KEY =
 
 /* =========================================================
    ADMIN EMAIL
+   ONLY THIS EMAIL IS ADMIN
    ========================================================= */
 
 const ADMIN_EMAIL =
@@ -62,46 +62,49 @@ function $$(selector) {
 
 function showAuthMessage(message, isError = false) {
 
-  const element =
-    $("#authMessage");
+  const element = $("#authMessage");
 
   if (!element) {
     return;
   }
 
-  element.textContent =
-    message || "";
+  element.textContent = message || "";
 
   element.style.color =
     isError
-      ? "#ef4444"
+      ? "#ff5c5c"
       : "#22c55e";
 }
 
 
 /* =========================================================
-   LOGIN SCREEN
+   SHOW LOGIN
    ========================================================= */
 
 function showLogin() {
 
-  const screen =
-    $("#authScreen");
+  const authScreen = $("#authScreen");
 
-  if (screen) {
-    screen.style.display = "flex";
+  if (authScreen) {
+    authScreen.style.display = "flex";
   }
 
+  clearLoginFields();
+
+  updateRoleUI(null);
 }
 
 
+/* =========================================================
+   HIDE LOGIN
+   ========================================================= */
+
 function hideLogin() {
 
-  const screen =
-    $("#authScreen");
+  const authScreen = $("#authScreen");
 
-  if (screen) {
-    screen.style.display = "none";
+  if (authScreen) {
+    authScreen.style.display = "none";
   }
 
 }
@@ -113,14 +116,9 @@ function hideLogin() {
 
 function clearLoginFields() {
 
-  const email =
-    $("#authEmail");
-
-  const password =
-    $("#authPassword");
-
-  const name =
-    $("#authName");
+  const email = $("#authEmail");
+  const password = $("#authPassword");
+  const name = $("#authName");
 
   if (email) {
     email.value = "";
@@ -134,176 +132,52 @@ function clearLoginFields() {
     name.value = "";
   }
 
+  showAuthMessage("");
+
 }
 
 
 /* =========================================================
-   RESET UI
+   ROLE UI
    ========================================================= */
 
-function resetUserUI() {
+function updateRoleUI(user) {
 
-  const name =
-    $("#userDisplayName");
+  const headerName =
+    $("#headerUserName");
+
+  const headerRole =
+    $("#headerRole");
 
   const avatar =
     $("#userAvatar");
 
-  const roleBadge =
-    $("#userRoleBadge");
-
-  const roleText =
-    roleBadge?.querySelector("span");
-
-  const creditCount =
-    $("#creditCount");
-
-  const planName =
-    $("#planName");
-
-  const planText =
-    $("#planCreditsText");
-
-  const description =
-    $("#creditDescription");
-
-  const bar =
-    $("#creditBar");
-
-  const profileName =
-    $("#profileName");
-
-  const profileEmail =
-    $("#profileEmail");
-
-  const profileRoleName =
-    $("#profileRoleName");
-
-  const profileRoleStatus =
-    $("#profileRoleStatus");
-
-
-  if (name) {
-    name.textContent =
-      "Viky User";
-  }
-
-
-  if (avatar) {
-    avatar.textContent =
-      "V";
-  }
-
-
-  if (roleBadge) {
-
-    roleBadge.classList.remove(
-      "admin-role"
-    );
-
-    roleBadge.classList.add(
-      "user-role"
-    );
-
-  }
-
-
-  if (roleText) {
-    roleText.textContent =
-      "USER";
-  }
-
-
-  if (creditCount) {
-    creditCount.textContent =
-      "100";
-  }
-
-
-  if (planName) {
-    planName.textContent =
-      "Free";
-  }
-
-
-  if (planText) {
-    planText.textContent =
-      "100 welcome credits";
-  }
-
-
-  if (description) {
-    description.textContent =
-      "100 credits available";
-  }
-
-
-  if (bar) {
-    bar.style.width =
-      "100%";
-  }
-
-
-  if (profileName) {
-    profileName.value =
-      "Viky User";
-  }
-
-
-  if (profileEmail) {
-    profileEmail.value =
-      "";
-  }
-
-
-  if (profileRoleName) {
-    profileRoleName.textContent =
-      "USER";
-  }
-
-
-  if (profileRoleStatus) {
-    profileRoleStatus.textContent =
-      "● Normal User";
-
-    profileRoleStatus.style.color =
-      "#22c55e";
-  }
-
-
-  hideAdminNav();
-
-}
-
-
-/* =========================================================
-   HIDE ADMIN NAV
-   ========================================================= */
-
-function hideAdminNav() {
-
   const adminNav =
     $("#adminNav");
 
-  if (adminNav) {
-
-    adminNav.classList.add(
-      "hidden"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   UPDATE USER UI
-   ========================================================= */
-
-function updateUserUI(user) {
 
   if (!user) {
-    resetUserUI();
+
+    if (headerName) {
+      headerName.textContent = "Viky User";
+    }
+
+    if (headerRole) {
+
+      headerRole.className =
+        "role-badge user-role";
+
+      headerRole.innerHTML =
+        "<i></i>User";
+
+    }
+
+    if (avatar) {
+      avatar.textContent = "V";
+    }
+
+    adminNav?.classList.add("hidden");
+
     return;
   }
 
@@ -320,8 +194,11 @@ function updateUserUI(user) {
       .toLowerCase();
 
 
-  isAdmin =
+  const admin =
     email === adminEmail;
+
+
+  isAdmin = admin;
 
 
   const name =
@@ -330,313 +207,136 @@ function updateUserUI(user) {
     "Viky User";
 
 
-  const displayName =
-    $("#userDisplayName");
-
-
-  const avatar =
-    $("#userAvatar");
-
-
-  const roleBadge =
-    $("#userRoleBadge");
-
-
-  const roleText =
-    roleBadge?.querySelector("span");
-
-
-  const creditCount =
-    $("#creditCount");
-
-
-  const planName =
-    $("#planName");
-
-
-  const planText =
-    $("#planCreditsText");
-
-
-  const description =
-    $("#creditDescription");
-
-
-  const bar =
-    $("#creditBar");
-
-
-  const profileName =
-    $("#profileName");
-
-
-  const profileEmail =
-    $("#profileEmail");
-
-
-  const profileRoleName =
-    $("#profileRoleName");
-
-
-  const profileRoleStatus =
-    $("#profileRoleStatus");
-
-
-  if (displayName) {
-
-    displayName.textContent =
-      name;
-
+  if (headerName) {
+    headerName.textContent = name;
   }
 
 
   if (avatar) {
-
     avatar.textContent =
-      name
-        .charAt(0)
-        .toUpperCase();
-
+      name.charAt(0).toUpperCase();
   }
 
 
-  if (profileName) {
+  if (admin) {
 
-    profileName.value =
-      name;
+    if (headerRole) {
 
-  }
+      headerRole.className =
+        "role-badge admin-role-badge";
 
-
-  if (profileEmail) {
-
-    profileEmail.value =
-      user.email || "";
-
-  }
-
-
-  /* =====================================================
-     ADMIN
-     ===================================================== */
-
-  if (isAdmin) {
-
-    credits =
-      Infinity;
-
-
-    if (roleBadge) {
-
-      roleBadge.classList.remove(
-        "user-role"
-      );
-
-      roleBadge.classList.add(
-        "admin-role"
-      );
+      headerRole.innerHTML =
+        "<i></i>Admin";
 
     }
 
+    adminNav?.classList.remove("hidden");
 
-    if (roleText) {
+  } else {
 
-      roleText.textContent =
-        "ADMIN";
+    if (headerRole) {
 
-    }
+      headerRole.className =
+        "role-badge user-role";
 
-
-    if (creditCount) {
-
-      creditCount.textContent =
-        "∞";
+      headerRole.innerHTML =
+        "<i></i>User";
 
     }
 
-
-    if (planName) {
-
-      planName.textContent =
-        "Unlimited";
-
-    }
-
-
-    if (planText) {
-
-      planText.textContent =
-        "Unlimited Credits";
-
-    }
-
-
-    if (description) {
-
-      description.textContent =
-        "All features unlocked";
-
-    }
-
-
-    if (bar) {
-
-      bar.style.width =
-        "100%";
-
-    }
-
-
-    if (profileRoleName) {
-
-      profileRoleName.textContent =
-        "ADMIN";
-
-    }
-
-
-    if (profileRoleStatus) {
-
-      profileRoleStatus.textContent =
-        "● Authorized Admin";
-
-      profileRoleStatus.style.color =
-        "#ef4444";
-
-    }
-
-
-    const adminNav =
-      $("#adminNav");
-
-    adminNav?.classList.remove(
-      "hidden"
-    );
-
-
-    /* Admin panel email */
-
-    const adminEmailElement =
-      $("#adminEmail");
-
-    if (adminEmailElement) {
-
-      adminEmailElement.textContent =
-        user.email || ADMIN_EMAIL;
-
-    }
-
-
-    return;
+    adminNav?.classList.add("hidden");
 
   }
-
-
-  /* =====================================================
-     NORMAL USER
-     ===================================================== */
-
-  credits =
-    100;
-
-
-  if (roleBadge) {
-
-    roleBadge.classList.remove(
-      "admin-role"
-    );
-
-    roleBadge.classList.add(
-      "user-role"
-    );
-
-  }
-
-
-  if (roleText) {
-
-    roleText.textContent =
-      "USER";
-
-  }
-
-
-  if (creditCount) {
-
-    creditCount.textContent =
-      credits;
-
-  }
-
-
-  if (planName) {
-
-    planName.textContent =
-      "Free";
-
-  }
-
-
-  if (planText) {
-
-    planText.textContent =
-      "100 welcome credits";
-
-  }
-
-
-  if (description) {
-
-    description.textContent =
-      "100 credits available";
-
-  }
-
-
-  if (bar) {
-
-    bar.style.width =
-      "100%";
-
-  }
-
-
-  if (profileRoleName) {
-
-    profileRoleName.textContent =
-      "USER";
-
-  }
-
-
-  if (profileRoleStatus) {
-
-    profileRoleStatus.textContent =
-      "● Normal User";
-
-    profileRoleStatus.style.color =
-      "#22c55e";
-
-  }
-
-
-  hideAdminNav();
 
 }
 
 
 /* =========================================================
-   ADMIN ACCESS
+   SHOW APPLICATION
+   ========================================================= */
+
+async function showApp() {
+
+  if (!currentUser) {
+    showLogin();
+    return;
+  }
+
+  hideLogin();
+
+  updateRoleUI(currentUser);
+
+  const userName =
+    currentUser.user_metadata?.full_name ||
+    currentUser.email?.split("@")[0] ||
+    "Viky User";
+
+
+  document
+    .querySelectorAll("body *")
+    .forEach((element) => {
+
+      if (
+        element.children.length === 0 &&
+        element.textContent.trim() === "Viky User"
+      ) {
+
+        element.textContent =
+          userName;
+
+      }
+
+    });
+
+
+  const profileName =
+    $("#profileName");
+
+  const profileEmail =
+    $("#profileEmail");
+
+
+  if (profileName) {
+    profileName.value =
+      currentUser.user_metadata?.full_name ||
+      userName;
+  }
+
+
+  if (profileEmail) {
+    profileEmail.value =
+      currentUser.email || "";
+  }
+
+}
+
+
+/* =========================================================
+   HIDE ADMIN NAV
+   ========================================================= */
+
+function hideAdminNav() {
+
+  $("#adminNav")
+    ?.classList
+    .add("hidden");
+
+}
+
+
+/* =========================================================
+   CHECK ADMIN ACCESS
    ========================================================= */
 
 async function checkAdminAccess() {
 
   if (!supabaseClient) {
 
-    isAdmin =
-      false;
+    isAdmin = false;
 
     hideAdminNav();
+
+    updateRoleUI(null);
 
     return false;
 
@@ -663,13 +363,13 @@ async function checkAdminAccess() {
 
     if (!user) {
 
-      currentUser =
-        null;
+      currentUser = null;
 
-      isAdmin =
-        false;
+      isAdmin = false;
 
       hideAdminNav();
+
+      updateRoleUI(null);
 
       return false;
 
@@ -680,24 +380,67 @@ async function checkAdminAccess() {
       user;
 
 
-    updateUserUI(
-      user
-    );
+    const email =
+      (user.email || "")
+        .trim()
+        .toLowerCase();
+
+
+    isAdmin =
+      email ===
+      ADMIN_EMAIL
+        .trim()
+        .toLowerCase();
+
+
+    updateRoleUI(user);
+
+
+    const adminRole =
+      $("#adminRole");
+
+    const adminStatus =
+      $("#adminStatus");
+
+    const adminEmail =
+      $("#adminEmail");
+
+
+    if (isAdmin) {
+
+      if (adminRole) {
+        adminRole.textContent =
+          "Admin";
+      }
+
+      if (adminStatus) {
+        adminStatus.textContent =
+          "✓ Authorized";
+      }
+
+      if (adminEmail) {
+        adminEmail.textContent =
+          user.email || "—";
+      }
+
+    }
 
 
     return isAdmin;
 
+
   } catch (error) {
 
     console.error(
-      "Admin check failed:",
+      "Admin access check failed:",
       error
     );
 
-    isAdmin =
-      false;
+    isAdmin = false;
 
     hideAdminNav();
+
+    updateRoleUI(currentUser);
 
     return false;
 
@@ -774,6 +517,7 @@ function setAuthMode(isSignup) {
       (forgot.style.display =
         "none");
 
+
   } else {
 
     title &&
@@ -813,7 +557,7 @@ function setAuthMode(isSignup) {
   }
 
 
-  showAuthMessage("");
+  clearLoginFields();
 
 }
 
@@ -875,13 +619,8 @@ async function loginUser() {
 
 
   if (button) {
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      "Signing in...";
-
+    button.disabled = true;
+    button.textContent = "Signing In...";
   }
 
 
@@ -899,11 +638,9 @@ async function loginUser() {
       await supabaseClient.auth
         .signInWithPassword({
 
-          email:
-            email,
+          email: email,
 
-          password:
-            password
+          password: password
 
         });
 
@@ -926,12 +663,9 @@ async function loginUser() {
       data.user;
 
 
-    updateUserUI(
-      currentUser
-    );
+    await checkAdminAccess();
 
-
-    hideLogin();
+    await showApp();
 
 
     showAuthMessage(
@@ -939,15 +673,16 @@ async function loginUser() {
     );
 
 
-    /* Clear password immediately */
+    /*
+       Keep login fields empty after login.
+    */
 
-    const passwordInput =
-      $("#authPassword");
-
-    if (passwordInput) {
-      passwordInput.value =
-        "";
-    }
+    setTimeout(
+      () => {
+        clearLoginFields();
+      },
+      300
+    );
 
 
   } catch (error) {
@@ -958,18 +693,38 @@ async function loginUser() {
     );
 
 
-    showAuthMessage(
+    let message =
       error?.message ||
-      "Invalid login credentials.",
+      "Login failed. Please try again.";
+
+
+    /*
+       Make the message easier to understand.
+    */
+
+    if (
+      message
+        .toLowerCase()
+        .includes("invalid login credentials")
+    ) {
+
+      message =
+        "Invalid email or password. Please check your Supabase account.";
+
+    }
+
+
+    showAuthMessage(
+      message,
       true
     );
+
 
   } finally {
 
     if (button) {
 
-      button.disabled =
-        false;
+      button.disabled = false;
 
       button.textContent =
         signupMode
@@ -1070,11 +825,10 @@ async function signupUser() {
 
   if (button) {
 
-    button.disabled =
-      true;
+    button.disabled = true;
 
     button.textContent =
-      "Creating...";
+      "Creating Account...";
 
   }
 
@@ -1093,18 +847,15 @@ async function signupUser() {
       await supabaseClient.auth
         .signUp({
 
-          email:
-            email,
+          email: email,
 
-          password:
-            password,
+          password: password,
 
           options: {
 
             data: {
 
-              full_name:
-                name
+              full_name: name
 
             }
 
@@ -1118,33 +869,45 @@ async function signupUser() {
     }
 
 
-    if (data?.session && data?.user) {
+    /*
+       Session exists when email confirmation
+       is disabled.
+    */
+
+    if (
+      data?.session &&
+      data?.user
+    ) {
 
       currentUser =
         data.user;
 
 
-      updateUserUI(
-        currentUser
-      );
+      await checkAdminAccess();
 
-
-      hideLogin();
+      await showApp();
 
 
       showAuthMessage(
         "Account created successfully!"
       );
 
+
     } else {
 
-      setAuthMode(false);
+      /*
+         Email confirmation is enabled.
+      */
 
       showAuthMessage(
         "Account created. Please verify your email, then Sign In."
       );
 
+
+      setAuthMode(false);
+
     }
+
 
   } catch (error) {
 
@@ -1160,12 +923,12 @@ async function signupUser() {
       true
     );
 
+
   } finally {
 
     if (button) {
 
-      button.disabled =
-        false;
+      button.disabled = false;
 
       button.textContent =
         signupMode
@@ -1180,127 +943,34 @@ async function signupUser() {
 
 
 /* =========================================================
-   FORGOT PASSWORD
-   ========================================================= */
-
-async function forgotPassword() {
-
-  if (!supabaseClient) {
-
-    showAuthMessage(
-      "Supabase is not connected.",
-      true
-    );
-
-    return;
-
-  }
-
-
-  const email =
-    ($("#authEmail")?.value || "")
-      .trim()
-      .toLowerCase();
-
-
-  if (!email) {
-
-    showAuthMessage(
-      "Enter your email first.",
-      true
-    );
-
-    return;
-
-  }
-
-
-  showAuthMessage(
-    "Sending password reset email..."
-  );
-
-
-  try {
-
-    const {
-      error
-    } =
-      await supabaseClient.auth
-        .resetPasswordForEmail(
-          email,
-          {
-            redirectTo:
-              window.location.origin
-          }
-        );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    showAuthMessage(
-      "Password reset email sent."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Password reset error:",
-      error
-    );
-
-
-    showAuthMessage(
-      error?.message ||
-      "Unable to send password reset email.",
-      true
-    );
-
-  }
-
-}
-
-
-/* =========================================================
    AUTH SETUP
    ========================================================= */
 
 function setupAuth() {
 
+  const form =
+    $("#authForm");
+
   const authSwitch =
     $("#authSwitch");
 
-  const authButton =
-    $("#authButton");
-
-  const forgotButton =
+  const forgotPassword =
     $("#forgotPassword");
 
-  const logoutButton =
-    $("#logoutButton");
 
+  /*
+     LOGIN / SIGNUP FORM
+     This fixes button problems.
+  */
 
-  authSwitch?.addEventListener(
-    "click",
-    (event) => {
-
-      event.preventDefault();
-
-      setAuthMode(
-        !signupMode
-      );
-
-    }
-  );
-
-
-  authButton?.addEventListener(
-    "click",
+  form?.addEventListener(
+    "submit",
     async (event) => {
 
       event.preventDefault();
+
+      event.stopPropagation();
+
 
       if (signupMode) {
 
@@ -1316,61 +986,250 @@ function setupAuth() {
   );
 
 
-  forgotButton?.addEventListener(
+  /*
+     LOGIN / SIGNUP SWITCH
+  */
+
+  authSwitch?.addEventListener(
     "click",
-    async (event) => {
+    (event) => {
 
       event.preventDefault();
 
-      await forgotPassword();
+      event.stopPropagation();
 
-    }
-  );
-
-
-  logoutButton?.addEventListener(
-    "click",
-    async (event) => {
-
-      event.preventDefault();
-
-      await logout();
-
-    }
-  );
-
-
-  /* Enter key login */
-
-  ["#authEmail", "#authPassword"]
-    .forEach((selector) => {
-
-      $(selector)?.addEventListener(
-        "keydown",
-        async (event) => {
-
-          if (
-            event.key === "Enter"
-          ) {
-
-            event.preventDefault();
-
-            if (signupMode) {
-
-              await signupUser();
-
-            } else {
-
-              await loginUser();
-
-            }
-
-          }
-
-        }
+      setAuthMode(
+        !signupMode
       );
 
-    });
+    }
+  );
+
+
+  /*
+     FORGOT PASSWORD
+  */
+
+  forgotPassword?.addEventListener(
+    "click",
+    async (event) => {
+
+      event.preventDefault();
+
+      if (!supabaseClient) {
+
+        showAuthMessage(
+          "Supabase is not connected.",
+          true
+        );
+
+        return;
+
+      }
+
+
+      const email =
+        ($("#authEmail")?.value || "")
+          .trim()
+          .toLowerCase();
+
+
+      if (!email) {
+
+        showAuthMessage(
+          "Enter your email first.",
+          true
+        );
+
+        return;
+
+      }
+
+
+      showAuthMessage(
+        "Sending password reset email..."
+      );
+
+
+      try {
+
+        const {
+          error
+        } =
+          await supabaseClient.auth
+            .resetPasswordForEmail(
+              email,
+              {
+                redirectTo:
+                  window.location.origin
+              }
+            );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        showAuthMessage(
+          "Password reset email sent."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Password reset error:",
+          error
+        );
+
+
+        showAuthMessage(
+          error?.message ||
+          "Unable to send password reset email.",
+          true
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   CHECK LOGIN
+   ========================================================= */
+
+async function checkLogin() {
+
+  if (!supabaseClient) {
+
+    showLogin();
+
+    return;
+
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .getSession();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    /*
+       Because persistSession is FALSE,
+       there should NOT be a saved session
+       after the browser is closed/reopened.
+    */
+
+    if (data?.session?.user) {
+
+      currentUser =
+        data.session.user;
+
+
+      await checkAdminAccess();
+
+      await showApp();
+
+
+    } else {
+
+      currentUser = null;
+
+      isAdmin = false;
+
+      showLogin();
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Session check failed:",
+      error
+    );
+
+
+    currentUser = null;
+
+    isAdmin = false;
+
+    showLogin();
+
+  }
+
+}
+
+
+/* =========================================================
+   AUTH STATE LISTENER
+   ========================================================= */
+
+function setupAuthStateListener() {
+
+  if (!supabaseClient) {
+    return;
+  }
+
+
+  supabaseClient.auth
+    .onAuthStateChange(
+      (event, session) => {
+
+        if (session?.user) {
+
+          currentUser =
+            session.user;
+
+
+          updateRoleUI(
+            currentUser
+          );
+
+
+          hideLogin();
+
+
+          setTimeout(
+            async () => {
+
+              await checkAdminAccess();
+
+            },
+            0
+          );
+
+
+        } else {
+
+          currentUser = null;
+
+          isAdmin = false;
+
+          hideAdminNav();
+
+          updateRoleUI(null);
+
+          showLogin();
+
+        }
+
+      }
+    );
 
 }
 
@@ -1381,16 +1240,44 @@ function setupAuth() {
 
 async function logout() {
 
+  if (!supabaseClient) {
+
+    currentUser = null;
+
+    isAdmin = false;
+
+    showLogin();
+
+    return;
+
+  }
+
+
   try {
 
-    if (supabaseClient) {
-
+    const {
+      error
+    } =
       await supabaseClient.auth
-        .signOut({
-          scope: "local"
-        });
+        .signOut();
 
+
+    if (error) {
+      throw error;
     }
+
+
+    currentUser = null;
+
+    isAdmin = false;
+
+
+    hideAdminNav();
+
+    updateRoleUI(null);
+
+    showLogin();
+
 
   } catch (error) {
 
@@ -1399,146 +1286,19 @@ async function logout() {
       error
     );
 
-  }
-
-
-  currentUser =
-    null;
-
-  isAdmin =
-    false;
-
-  credits =
-    100;
-
-
-  resetUserUI();
-
-  clearLoginFields();
-
-  setAuthMode(false);
-
-  showLogin();
-
-}
-
-
-/* =========================================================
-   DASHBOARD
-   ========================================================= */
-
-function showDashboard() {
-
-  $("#accountPage")
-    ?.classList
-    .add("hidden");
-
-  $("#adminPage")
-    ?.classList
-    .add("hidden");
-
-  $(".content")
-    ?.classList
-    .remove("hidden");
-
-}
-
-
-/* =========================================================
-   ACCOUNT
-   ========================================================= */
-
-function showAccount(page) {
-
-  $("#accountPage")
-    ?.classList
-    .remove("hidden");
-
-  $(".content")
-    ?.classList
-    .add("hidden");
-
-  $("#adminPage")
-    ?.classList
-    .add("hidden");
-
-
-  [
-    "profile",
-    "subscription",
-    "settings"
-  ]
-    .forEach((pageName) => {
-
-      $(`#${pageName}Page`)
-        ?.classList
-        .add("hidden");
-
-    });
-
-
-  $(`#${page}Page`)
-    ?.classList
-    .remove("hidden");
-
-
-  const title =
-    $("#accountTitle");
-
-
-  if (title) {
-
-    title.textContent =
-      page.charAt(0).toUpperCase() +
-      page.slice(1);
-
-  }
-
-}
-
-
-/* =========================================================
-   ADMIN PAGE
-   ========================================================= */
-
-function showAdminPage() {
-
-  if (!isAdmin) {
 
     alert(
-      "Admin access required."
+      error?.message ||
+      "Logout failed."
     );
-
-    return;
-
-  }
-
-
-  $(".content")
-    ?.classList
-    .add("hidden");
-
-  $("#accountPage")
-    ?.classList
-    .add("hidden");
-
-  $("#adminPage")
-    ?.classList
-    .remove("hidden");
-
-
-  const email =
-    $("#adminEmail");
-
-  if (email) {
-
-    email.textContent =
-      currentUser?.email ||
-      ADMIN_EMAIL;
 
   }
 
 }
+
+
+window.logout =
+  logout;
 
 
 /* =========================================================
@@ -1552,25 +1312,29 @@ function setMode(newMode) {
 
 
   $$(".mode")
-    .forEach((element) => {
+    .forEach(
+      (element) => {
 
-      element.classList.toggle(
-        "active",
-        element.dataset.mode === newMode
-      );
+        element.classList.toggle(
+          "active",
+          element.dataset.mode === newMode
+        );
 
-    });
+      }
+    );
 
 
   $$(".sidebar a[data-mode]")
-    .forEach((element) => {
+    .forEach(
+      (element) => {
 
-      element.classList.toggle(
-        "active",
-        element.dataset.mode === newMode
-      );
+        element.classList.toggle(
+          "active",
+          element.dataset.mode === newMode
+        );
 
-    });
+      }
+    );
 
 
   const upload =
@@ -1670,6 +1434,148 @@ function setMode(newMode) {
 
 
 /* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function showDashboard() {
+
+  $("#accountPage")
+    ?.classList
+    .add("hidden");
+
+
+  $("#adminPage")
+    ?.classList
+    .add("hidden");
+
+
+  $(".content")
+    ?.classList
+    .remove("hidden");
+
+}
+
+
+/* =========================================================
+   ACCOUNT
+   ========================================================= */
+
+function showAccount(page) {
+
+  $("#accountPage")
+    ?.classList
+    .remove("hidden");
+
+
+  $(".content")
+    ?.classList
+    .add("hidden");
+
+
+  $("#adminPage")
+    ?.classList
+    .add("hidden");
+
+
+  [
+    "profile",
+    "subscription",
+    "settings"
+  ]
+    .forEach(
+      (pageName) => {
+
+        $(`#${pageName}Page`)
+          ?.classList
+          .add("hidden");
+
+      }
+    );
+
+
+  $(`#${page}Page`)
+    ?.classList
+    .remove("hidden");
+
+
+  const title =
+    $("#accountTitle");
+
+
+  if (title) {
+
+    title.textContent =
+      page.charAt(0).toUpperCase() +
+      page.slice(1);
+
+  }
+
+}
+
+
+/* =========================================================
+   ADMIN PAGE
+   ========================================================= */
+
+function showAdminPage() {
+
+  if (!isAdmin) {
+
+    alert(
+      "Admin access required."
+    );
+
+    return;
+
+  }
+
+
+  $(".content")
+    ?.classList
+    .add("hidden");
+
+
+  $("#accountPage")
+    ?.classList
+    .add("hidden");
+
+
+  $("#adminPage")
+    ?.classList
+    .remove("hidden");
+
+
+  if ($("#adminRole")) {
+
+    $("#adminRole")
+      .textContent =
+      "Admin";
+
+  }
+
+
+  if ($("#adminStatus")) {
+
+    $("#adminStatus")
+      .textContent =
+      "✓ Authorized";
+
+  }
+
+
+  if ($("#adminEmail")) {
+
+    $("#adminEmail")
+      .textContent =
+      currentUser?.email ||
+      "—";
+
+  }
+
+}
+
+
+/* =========================================================
    PRICING
    ========================================================= */
 
@@ -1692,17 +1598,6 @@ window.scrollToPricing =
    ========================================================= */
 
 function buy(plan) {
-
-  if (isAdmin) {
-
-    alert(
-      "Admin account already has Unlimited Credits and all features unlocked."
-    );
-
-    return;
-
-  }
-
 
   alert(
     `${plan} selected. Payment gateway will be connected in the backend step.`
@@ -1737,9 +1632,9 @@ function setupDashboard() {
     $("#moreMenu");
 
 
-  /* =====================================================
+  /*
      PROMPT COUNTER
-     ===================================================== */
+  */
 
   promptBox?.addEventListener(
     "input",
@@ -1756,58 +1651,59 @@ function setupDashboard() {
   );
 
 
-  /* =====================================================
+  /*
      MODE BUTTONS
-     ===================================================== */
+  */
 
   $$(".mode, .sidebar a[data-mode]")
-    .forEach((element) => {
+    .forEach(
+      (element) => {
 
-      element.addEventListener(
-        "click",
-        (event) => {
+        element.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-          const selectedMode =
-            element.dataset.mode;
+            event.preventDefault();
 
 
-          if (
-            [
-              "female",
-              "male",
-              "young",
-              "narrator"
-            ].includes(selectedMode)
-          ) {
+            const selectedMode =
+              element.dataset.mode;
 
-            setMode("voice");
 
-          } else if (
-            selectedMode
-          ) {
+            if (
+              [
+                "female",
+                "male",
+                "young",
+                "narrator"
+              ].includes(selectedMode)
+            ) {
 
-            setMode(
+              setMode("voice");
+
+            } else if (
               selectedMode
-            );
+            ) {
+
+              setMode(selectedMode);
+
+            }
+
+
+            moreMenu
+              ?.classList
+              .add("hidden");
 
           }
+        );
+
+      }
+    );
 
 
-          moreMenu
-            ?.classList
-            .add("hidden");
-
-        }
-      );
-
-    });
-
-
-  /* =====================================================
+  /*
      MORE MENU
-     ===================================================== */
+  */
 
   moreTools?.addEventListener(
     "click",
@@ -1815,18 +1711,19 @@ function setupDashboard() {
 
       event.preventDefault();
 
+
       moreMenu
         ?.classList
         .toggle("hidden");
 
 
-      const arrow =
+      const button =
         moreTools.querySelector("b");
 
 
-      if (arrow) {
+      if (button) {
 
-        arrow.textContent =
+        button.textContent =
           moreMenu?.classList
             .contains("hidden")
             ? "⌄"
@@ -1838,59 +1735,59 @@ function setupDashboard() {
   );
 
 
-  /* =====================================================
-     ACCOUNT / ADMIN NAV
-     ===================================================== */
+  /*
+     ACCOUNT / ADMIN NAVIGATION
+  */
 
   $$("[data-page]")
-    .forEach((element) => {
+    .forEach(
+      (element) => {
 
-      element.addEventListener(
-        "click",
-        (event) => {
+        element.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
-
-
-          const page =
-            element.dataset.page;
+            event.preventDefault();
 
 
-          if (page === "dashboard") {
+            const page =
+              element.dataset.page;
 
-            showDashboard();
 
-            return;
+            if (page === "dashboard") {
+
+              showDashboard();
+
+              return;
+
+            }
+
+
+            if (page === "admin") {
+
+              showAdminPage();
+
+              return;
+
+            }
+
+
+            if (page) {
+
+              showAccount(page);
+
+            }
 
           }
+        );
+
+      }
+    );
 
 
-          if (page === "admin") {
-
-            showAdminPage();
-
-            return;
-
-          }
-
-
-          if (page) {
-
-            showAccount(
-              page
-            );
-
-          }
-
-        }
-      );
-
-    });
-
-
-  /* =====================================================
+  /*
      BACK DASHBOARD
-     ===================================================== */
+  */
 
   $("#backDashboard")
     ?.addEventListener(
@@ -1905,9 +1802,9 @@ function setupDashboard() {
     );
 
 
-  /* =====================================================
+  /*
      BACK ADMIN
-     ===================================================== */
+  */
 
   $("#backFromAdmin")
     ?.addEventListener(
@@ -1922,78 +1819,82 @@ function setupDashboard() {
     );
 
 
-  /* =====================================================
+  /*
      CHOICES
-     ===================================================== */
+  */
 
   $$(".choices button")
-    .forEach((button) => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        (event) => {
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
+            event.preventDefault();
 
 
-          button.parentElement
-            ?.querySelectorAll("button")
-            .forEach((item) => {
+            button.parentElement
+              ?.querySelectorAll("button")
+              .forEach(
+                (item) => {
 
-              item.classList.remove(
-                "selected"
+                  item.classList
+                    .remove("selected");
+
+                }
               );
 
-            });
+
+            button.classList
+              .add("selected");
+
+          }
+        );
+
+      }
+    );
 
 
-          button.classList.add(
-            "selected"
-          );
-
-        }
-      );
-
-    });
-
-
-  /* =====================================================
+  /*
      VOICE CHOICES
-     ===================================================== */
+  */
 
   $$(".voice-choice")
-    .forEach((button) => {
+    .forEach(
+      (button) => {
 
-      button.addEventListener(
-        "click",
-        (event) => {
+        button.addEventListener(
+          "click",
+          (event) => {
 
-          event.preventDefault();
+            event.preventDefault();
 
 
-          $$(".voice-choice")
-            .forEach((item) => {
+            $$(".voice-choice")
+              .forEach(
+                (item) => {
 
-              item.classList.remove(
-                "selected"
+                  item.classList
+                    .remove("selected");
+
+                }
               );
 
-            });
+
+            button.classList
+              .add("selected");
+
+          }
+        );
+
+      }
+    );
 
 
-          button.classList.add(
-            "selected"
-          );
-
-        }
-      );
-
-    });
-
-
-  /* =====================================================
+  /*
      FILE UPLOAD
-     ===================================================== */
+  */
 
   input?.addEventListener(
     "change",
@@ -2022,9 +1923,9 @@ function setupDashboard() {
   );
 
 
-  /* =====================================================
+  /*
      GENERATE
-     ===================================================== */
+  */
 
   $("#generate")
     ?.addEventListener(
@@ -2048,17 +1949,11 @@ function setupDashboard() {
             : 20;
 
 
-        /* Admin has unlimited credits */
-
-        if (
-          !isAdmin &&
-          credits < cost
-        ) {
+        if (credits < cost) {
 
           alert(
             `Not enough credits. This action needs ${cost} credits.`
           );
-
 
           scrollToPricing();
 
@@ -2100,22 +1995,14 @@ function setupDashboard() {
         }
 
 
-        /* Normal users lose credits */
-
-        if (!isAdmin) {
-
-          credits -= cost;
-
-        }
+        credits -= cost;
 
 
         if ($("#creditCount")) {
 
           $("#creditCount")
             .textContent =
-            isAdmin
-              ? "∞"
-              : credits;
+            credits;
 
         }
 
@@ -2129,8 +2016,7 @@ function setupDashboard() {
         }
 
 
-        button.disabled =
-          true;
+        button.disabled = true;
 
 
         button.innerHTML =
@@ -2151,11 +2037,7 @@ function setupDashboard() {
                 mode === "voice"
                   ? "VOICE"
                   : "VIDEO"
-              } <span>${
-                isAdmin
-                  ? "∞ credits"
-                  : `${cost} credits`
-              }</span>`;
+              } <span>${cost} credits</span>`;
 
 
             const list =
@@ -2173,9 +2055,7 @@ function setupDashboard() {
 
 
             const item =
-              document.createElement(
-                "div"
-              );
+              document.createElement("div");
 
 
             item.className =
@@ -2200,24 +2080,14 @@ function setupDashboard() {
 
             item.innerHTML = `
               <div class="thumb"></div>
-
               <div>
                 <b>${label}</b>
-
-                <small>
-                  ✓ Demo complete • ${
-                    isAdmin
-                      ? "Unlimited"
-                      : cost + " credits"
-                  }
-                </small>
+                <small>✓ Demo complete • ${cost} credits</small>
               </div>
             `;
 
 
-            list.prepend(
-              item
-            );
+            list.prepend(item);
 
           },
           1800
@@ -2227,140 +2097,134 @@ function setupDashboard() {
     );
 
 
-  /* =====================================================
-     ADMIN USERS
-     ===================================================== */
+  /*
+     ADMIN BUTTONS
+  */
 
-  $("#adminUsersBtn")
-    ?.addEventListener(
-      "click",
-      () => {
+  const adminButtons = [
+    [
+      "#adminUsersBtn",
+      "User management requires a secure backend or Supabase Edge Function."
+    ],
+    [
+      "#adminCreditsBtn",
+      "Credits management requires a secure backend or Supabase Edge Function."
+    ],
+    [
+      "#adminVideosBtn",
+      "Video management requires a secure backend or Supabase Edge Function."
+    ],
+    [
+      "#adminSettingsBtn",
+      "Admin settings require a secure backend or Supabase Edge Function."
+    ]
+  ];
 
-        if (!isAdmin) {
-          return;
+
+  adminButtons.forEach(
+    ([selector, message]) => {
+
+      $(selector)?.addEventListener(
+        "click",
+        () => {
+
+          if (!isAdmin) {
+
+            alert(
+              "Admin access required."
+            );
+
+            return;
+
+          }
+
+
+          const box =
+            $("#adminMessage");
+
+
+          if (!box) {
+            return;
+          }
+
+
+          box.style.display =
+            "block";
+
+
+          box.textContent =
+            message;
+
         }
+      );
+
+    }
+  );
+
+}
 
 
-        const box =
-          $("#adminMessage");
+/* =========================================================
+   CREATE SUPABASE CLIENT
+   ========================================================= */
+
+function createSupabaseClient() {
+
+  if (
+    !window.supabase ||
+    typeof window.supabase.createClient !==
+    "function"
+  ) {
+
+    console.error(
+      "Supabase JavaScript library was not loaded."
+    );
+
+    return null;
+
+  }
 
 
-        if (!box) {
-          return;
+  try {
+
+    /*
+       IMPORTANT:
+
+       persistSession: false
+       --------------------
+       Supabase will NOT keep the login session
+       in browser localStorage.
+
+       Therefore after closing/reopening the website,
+       the user must login again.
+    */
+
+    return window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY,
+      {
+        auth: {
+
+          persistSession: false,
+
+          autoRefreshToken: false,
+
+          detectSessionInUrl: false
+
         }
-
-
-        box.style.display =
-          "block";
-
-
-        box.textContent =
-          "User management requires a secure backend or Supabase Edge Function.";
-
       }
     );
 
+  } catch (error) {
 
-  /* =====================================================
-     ADMIN CREDITS
-     ===================================================== */
-
-  $("#adminCreditsBtn")
-    ?.addEventListener(
-      "click",
-      () => {
-
-        if (!isAdmin) {
-          return;
-        }
-
-
-        const box =
-          $("#adminMessage");
-
-
-        if (!box) {
-          return;
-        }
-
-
-        box.style.display =
-          "block";
-
-
-        box.textContent =
-          "Admin account: Unlimited Credits. All features are unlocked.";
-
-      }
+    console.error(
+      "Supabase client creation failed:",
+      error
     );
 
+    return null;
 
-  /* =====================================================
-     ADMIN VIDEOS
-     ===================================================== */
-
-  $("#adminVideosBtn")
-    ?.addEventListener(
-      "click",
-      () => {
-
-        if (!isAdmin) {
-          return;
-        }
-
-
-        const box =
-          $("#adminMessage");
-
-
-        if (!box) {
-          return;
-        }
-
-
-        box.style.display =
-          "block";
-
-
-        box.textContent =
-          "Video management requires a secure backend or Supabase Edge Function.";
-
-      }
-    );
-
-
-  /* =====================================================
-     ADMIN SETTINGS
-     ===================================================== */
-
-  $("#adminSettingsBtn")
-    ?.addEventListener(
-      "click",
-      () => {
-
-        if (!isAdmin) {
-          return;
-        }
-
-
-        const box =
-          $("#adminMessage");
-
-
-        if (!box) {
-          return;
-        }
-
-
-        box.style.display =
-          "block";
-
-
-        box.textContent =
-          "Admin settings require a secure backend or Supabase Edge Function.";
-
-      }
-    );
+  }
 
 }
 
@@ -2376,25 +2240,24 @@ async function initializeVikyAI() {
   );
 
 
-  resetUserUI();
+  /*
+     ALWAYS START WITH EMPTY LOGIN BOXES.
+  */
 
   clearLoginFields();
 
+  setAuthMode(false);
 
-  /* =====================================================
-     CHECK SUPABASE LIBRARY
-     ===================================================== */
 
-  if (
-    !window.supabase ||
-    typeof window.supabase.createClient !==
-    "function"
-  ) {
+  /*
+     CREATE SUPABASE CLIENT.
+  */
 
-    console.error(
-      "Supabase JavaScript library was not loaded."
-    );
+  supabaseClient =
+    createSupabaseClient();
 
+
+  if (!supabaseClient) {
 
     showLogin();
 
@@ -2403,92 +2266,26 @@ async function initializeVikyAI() {
   }
 
 
-  /* =====================================================
-     CREATE CLIENT
-     
-     IMPORTANT:
-     persistSession = false
-
-     This means the login session is NOT saved
-     to localStorage. Closing/reopening the
-     website requires login again.
-     ===================================================== */
-
-  try {
-
-    supabaseClient =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY,
-        {
-          auth: {
-
-            persistSession:
-              false,
-
-            autoRefreshToken:
-              false,
-
-            detectSessionInUrl:
-              true
-
-          }
-
-        }
-      );
-
-  } catch (error) {
-
-    console.error(
-      "Supabase client creation failed:",
-      error
-    );
-
-
-    showLogin();
-
-    return;
-
-  }
-
+  /*
+     SETUP UI.
+  */
 
   setupAuth();
 
   setupDashboard();
 
-  setAuthMode(false);
+  setupAuthStateListener();
 
 
-  /* =====================================================
-     IMPORTANT:
-     Start with empty login screen.
-     We DO NOT automatically restore old login.
-     ===================================================== */
+  /*
+     CHECK SESSION.
+  */
 
-  await supabaseClient.auth.signOut({
-    scope: "local"
-  });
-
-
-  currentUser =
-    null;
-
-  isAdmin =
-    false;
-
-  credits =
-    100;
-
-
-  resetUserUI();
-
-  clearLoginFields();
-
-  showLogin();
+  await checkLogin();
 
 
   console.log(
-    "Viky AI initialized successfully."
+    "Viky AI initialized."
   );
 
 }
