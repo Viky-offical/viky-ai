@@ -10,10 +10,35 @@
   <link rel="icon" type="image/png" href="cropped_circle_image.png">
   <link rel="shortcut icon" type="image/png" href="cropped_circle_image.png">
   <link rel="apple-touch-icon" href="cropped_circle_image.png">
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">VIKY<span>AI</span></div>
+
+    <h1 id="authTitle">Welcome to Viky AI</h1>
+    <p id="authSubtitle">Sign in to continue</p>
+
+    <input id="authName" type="text" placeholder="Your name" style="display:none;">
+    <input id="authEmail" type="email" placeholder="Email address">
+    <input id="authPassword" type="password" placeholder="Password">
+
+    <button id="authButton">Sign In</button>
+
+    <button id="forgotPassword" class="auth-link">
+      Forgot password?
+    </button>
+
+    <p id="authMessage"></p>
+
+    <div class="auth-switch">
+      <span id="authSwitchText">Don't have an account?</span>
+      <button id="authSwitch">Create Account</button>
+    </div>
+  </div>
+</div>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><span>VIKY</span> <b>AI</b><small>TURN YOUR IDEAS INTO REALITY</small></div>
