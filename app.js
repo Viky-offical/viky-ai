@@ -40,7 +40,91 @@ let mode = "text";
 */
 
 let credits = 100;
+/* =========================================================
+   CREDIT STORAGE
+   ========================================================= */
 
+function getCreditStorageKey() {
+
+  if (!currentUser?.id) {
+    return null;
+  }
+
+  return `viky_ai_credits_${currentUser.id}`;
+
+}
+
+
+function loadUserCredits() {
+
+  if (!currentUser?.id) {
+    credits = 100;
+    return;
+  }
+
+  // Admin = Unlimited
+  if (isCurrentAdmin()) {
+    credits = Infinity;
+    return;
+  }
+
+  const key =
+    getCreditStorageKey();
+
+  const saved =
+    localStorage.getItem(key);
+
+  if (saved === null) {
+
+    // New user gets 100 credits only ONCE
+    credits = 100;
+
+    localStorage.setItem(
+      key,
+      "100"
+    );
+
+  } else {
+
+    const parsed =
+      Number(saved);
+
+    credits =
+      Number.isFinite(parsed)
+        ? Math.max(0, parsed)
+        : 100;
+
+  }
+
+  updateCreditUI();
+
+}
+
+
+function saveUserCredits() {
+
+  // Admin credits are unlimited
+  if (isAdmin) {
+    return;
+  }
+
+  if (!currentUser?.id) {
+    return;
+  }
+
+  const key =
+    getCreditStorageKey();
+
+  if (!key) {
+    return;
+  }
+
+  localStorage.setItem(
+    key,
+    String(Math.max(0, credits))
+  );
+
+}
 
 /* =========================================================
    HELPERS
