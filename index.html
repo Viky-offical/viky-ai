@@ -15,17 +15,16 @@
   <link rel="shortcut icon" type="image/png" href="cropped_circle_image.png">
   <link rel="apple-touch-icon" href="cropped_circle_image.png">
 
-  <!-- SUPABASE -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
   <!-- =====================================================
-       LOGIN / SIGNUP
+       LOGIN / SIGNUP SCREEN
        ===================================================== -->
 
   <div id="authScreen" class="auth-screen">
@@ -44,30 +43,40 @@
         Sign in to continue
       </p>
 
-      <form id="authForm" autocomplete="off">
+      <form
+        id="authForm"
+        autocomplete="off"
+        novalidate
+      >
 
         <input
           id="authName"
           type="text"
+          name="viky-name"
           placeholder="Your name"
           autocomplete="off"
           style="display:none;"
+          value=""
         >
 
         <input
           id="authEmail"
           type="email"
+          name="viky-login-email"
           placeholder="Email address"
           autocomplete="off"
           autocapitalize="none"
           spellcheck="false"
+          value=""
         >
 
         <input
           id="authPassword"
           type="password"
+          name="viky-login-password"
           placeholder="Password"
           autocomplete="new-password"
+          value=""
         >
 
         <button
@@ -115,9 +124,7 @@
 
   <div class="app">
 
-    <!-- ===================================================
-         SIDEBAR
-         =================================================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
@@ -135,71 +142,44 @@
 
       <nav>
 
-        <!-- DASHBOARD -->
-
         <a
           class="active"
           data-page="dashboard"
           href="#"
         >
-          ⌂
-          <span>Dashboard</span>
+          ⌂ <span>Dashboard</span>
         </a>
 
-
-        <!-- AI TOOLS -->
 
         <div class="nav-title">
           AI TOOLS
         </div>
 
 
-        <a
-          data-mode="text"
-          href="#"
-        >
-          ✍️
-          <span>Text to Video</span>
+        <a data-mode="text" href="#">
+          ✍️ <span>Text to Video</span>
         </a>
 
-
-        <a
-          data-mode="image"
-          href="#"
-        >
-          🖼️
-          <span>Image to Video</span>
+        <a data-mode="image" href="#">
+          🖼️ <span>Image to Video</span>
         </a>
 
-
-        <a
-          data-mode="textimage"
-          href="#"
-        >
-          ✍️🖼️
-          <span>Text + Image to Video</span>
+        <a data-mode="textimage" href="#">
+          ✍️🖼️ <span>Text + Image to Video</span>
           <em>NEW</em>
         </a>
 
-
-        <a
-          data-mode="video"
-          href="#"
-        >
-          🎞️
-          <span>Video to Video</span>
+        <a data-mode="video" href="#">
+          🎞️ <span>Video to Video</span>
         </a>
 
-
-        <!-- MORE -->
 
         <button
           id="moreTools"
           class="more-btn"
           type="button"
         >
-          ＋
-          <span>More</span>
+          ＋ <span>More</span>
           <b>⌄</b>
         </button>
 
@@ -209,167 +189,84 @@
           class="more-menu hidden"
         >
 
-          <a
-            data-mode="story"
-            href="#"
-          >
-            📖
-            <span>AI Story to Video</span>
+          <a data-mode="story" href="#">
+            📖 <span>AI Story to Video</span>
           </a>
 
-
-          <a
-            data-mode="voice"
-            href="#"
-          >
-            🎙️
-            <span>AI Voice Over</span>
+          <a data-mode="voice" href="#">
+            🎙️ <span>AI Voice Over</span>
           </a>
 
-
-          <a
-            data-mode="female"
-            href="#"
-          >
-            👩
-            <span>Female Voice</span>
+          <a data-mode="female" href="#">
+            👩 <span>Female Voice</span>
           </a>
 
-
-          <a
-            data-mode="male"
-            href="#"
-          >
-            👨
-            <span>Male Voice</span>
+          <a data-mode="male" href="#">
+            👨 <span>Male Voice</span>
           </a>
 
-
-          <a
-            data-mode="young"
-            href="#"
-          >
-            🧑
-            <span>Young Voice</span>
+          <a data-mode="young" href="#">
+            🧑 <span>Young Voice</span>
           </a>
 
-
-          <a
-            data-mode="narrator"
-            href="#"
-          >
-            🎙️
-            <span>Narrator</span>
+          <a data-mode="narrator" href="#">
+            🎙️ <span>Narrator</span>
           </a>
 
-
-          <a
-            data-mode="music"
-            href="#"
-          >
-            🎵
-            <span>AI Music</span>
+          <a data-mode="music" href="#">
+            🎵 <span>AI Music</span>
           </a>
 
-
-          <a
-            data-mode="soundfx"
-            href="#"
-          >
-            🔊
-            <span>Sound Effects</span>
+          <a data-mode="soundfx" href="#">
+            🔊 <span>Sound Effects</span>
           </a>
 
-
-          <a
-            data-mode="subtitle"
-            href="#"
-          >
-            💬
-            <span>AI Subtitles</span>
+          <a data-mode="subtitle" href="#">
+            💬 <span>AI Subtitles</span>
           </a>
 
-
-          <a
-            data-mode="thumbnail"
-            href="#"
-          >
-            🖼️
-            <span>AI Thumbnail</span>
+          <a data-mode="thumbnail" href="#">
+            🖼️ <span>AI Thumbnail</span>
           </a>
 
         </div>
 
-
-        <!-- LIBRARY -->
 
         <div class="nav-title">
           LIBRARY
         </div>
 
-
-        <a
-          data-mode="videos"
-          href="#"
-        >
-          ▱
-          <span>My Videos</span>
+        <a data-mode="videos" href="#">
+          ▱ <span>My Videos</span>
         </a>
 
-
-        <a
-          data-mode="templates"
-          href="#"
-        >
-          ▦
-          <span>Templates</span>
+        <a data-mode="templates" href="#">
+          ▦ <span>Templates</span>
         </a>
 
-
-        <a
-          data-mode="favorites"
-          href="#"
-        >
-          ♡
-          <span>Favorites</span>
+        <a data-mode="favorites" href="#">
+          ♡ <span>Favorites</span>
         </a>
 
-
-        <!-- ACCOUNT -->
 
         <div class="nav-title">
           ACCOUNT
         </div>
 
+        <a data-page="profile" href="#">
+          ♙ <span>Profile</span>
+        </a>
 
-        <a
-          data-page="profile"
-          href="#"
-        >
-          ♙
-          <span>Profile</span>
+        <a data-page="subscription" href="#">
+          ▣ <span>Subscription</span>
+        </a>
+
+        <a data-page="settings" href="#">
+          ⚙ <span>Settings</span>
         </a>
 
 
-        <a
-          data-page="subscription"
-          href="#"
-        >
-          ▣
-          <span>Subscription</span>
-        </a>
-
-
-        <a
-          data-page="settings"
-          href="#"
-        >
-          ⚙
-          <span>Settings</span>
-        </a>
-
-
-        <!-- ADMIN -->
+        <!-- ADMIN NAV -->
 
         <a
           id="adminNav"
@@ -377,20 +274,15 @@
           class="hidden"
           href="#"
         >
-          🛡️
-          <span>Admin Panel</span>
+          🛡️ <span>Admin Panel</span>
         </a>
 
       </nav>
 
 
-      <!-- PRO CARD -->
-
       <div class="side-card">
 
-        <b>
-          Viky AI PRO
-        </b>
+        <b>Viky AI PRO</b>
 
         <p>
           Unlock premium generation, higher quality
@@ -409,11 +301,12 @@
     </aside>
 
 
-    <!-- ===================================================
+    <!-- =====================================================
          MAIN
-         =================================================== -->
+         ===================================================== -->
 
     <main>
+
 
       <!-- HEADER -->
 
@@ -444,7 +337,6 @@
               Viky User
             </b>
 
-
             <span
               id="headerRole"
               class="role-badge user-role"
@@ -463,9 +355,9 @@
       </header>
 
 
-      <!-- =================================================
+      <!-- =====================================================
            DASHBOARD
-           ================================================= -->
+           ===================================================== -->
 
       <section class="content">
 
@@ -484,8 +376,6 @@
           </div>
 
 
-          <!-- CREDIT DISPLAY -->
-
           <div class="credits">
 
             <span>
@@ -501,7 +391,7 @@
         </div>
 
 
-        <!-- AI MODES -->
+        <!-- MODES -->
 
         <div class="modes">
 
@@ -611,15 +501,17 @@
         </div>
 
 
-        <!-- =================================================
+        <!-- =====================================================
              WORKSPACE
-             ================================================= -->
+             ===================================================== -->
 
         <div class="workspace">
+
 
           <!-- LEFT PANEL -->
 
           <div class="panel">
+
 
             <!-- UPLOAD -->
 
@@ -683,6 +575,7 @@
             <!-- SETTINGS -->
 
             <div class="settings-grid">
+
 
               <!-- DURATION -->
 
@@ -860,6 +753,7 @@
 
 
               <div class="voice-choices">
+
 
                 <button
                   class="voice-choice selected"
@@ -1072,22 +966,30 @@
             <p class="note">
 
               Generation cost:
-              <b>20 credits</b>
+
+              <b>
+                20 credits
+              </b>
+
               per video.
 
               Your free account starts with
-              <b>100 credits</b>.
+
+              <b>
+                100 credits
+              </b>.
 
             </p>
 
           </div>
 
 
-          <!-- =================================================
+          <!-- =====================================================
                RIGHT SIDE
-               ================================================= -->
+               ===================================================== -->
 
           <aside class="right">
+
 
             <!-- PLAN -->
 
@@ -1126,9 +1028,7 @@
 
 
               <div class="bar">
-
                 <i></i>
-
               </div>
 
 
@@ -1159,9 +1059,7 @@
               <div id="recentList">
 
                 <div class="empty">
-
                   Your generated videos will appear here.
-
                 </div>
 
               </div>
@@ -1173,9 +1071,9 @@
         </div>
 
 
-        <!-- =================================================
+        <!-- =====================================================
              PRICING
-             ================================================= -->
+             ===================================================== -->
 
         <section
           id="pricing"
@@ -1205,6 +1103,7 @@
 
 
           <div class="price-grid">
+
 
             <!-- STARTER -->
 
@@ -1259,6 +1158,7 @@
                 ⭐ MOST POPULAR
               </span>
 
+
               <h3>
                 500 Credits
               </h3>
@@ -1303,6 +1203,7 @@
               <span class="tag">
                 PREMIUM
               </span>
+
 
               <h3>
                 1,000 Credits
@@ -1356,14 +1257,15 @@
       </section>
 
 
-      <!-- =================================================
+      <!-- =====================================================
            ACCOUNT PAGE
-           ================================================= -->
+           ===================================================== -->
 
       <section
         id="accountPage"
         class="account-page hidden"
       >
+
 
         <div class="account-top">
 
@@ -1398,6 +1300,7 @@
 
 
           <div class="form-row">
+
 
             <label>
 
@@ -1466,6 +1369,7 @@
 
 
           <div class="sub-cards">
+
 
             <div>
 
@@ -1650,14 +1554,15 @@
       </section>
 
 
-      <!-- =================================================
+      <!-- =====================================================
            ADMIN PAGE
-           ================================================= -->
+           ===================================================== -->
 
       <section
         id="adminPage"
         class="admin-page hidden"
       >
+
 
         <div class="account-top">
 
@@ -1676,6 +1581,7 @@
 
 
         <div class="admin-card">
+
 
           <!-- ADMIN HEADER -->
 
@@ -1723,6 +1629,7 @@
 
           <div class="admin-info">
 
+
             <div>
 
               <span>
@@ -1754,6 +1661,7 @@
           <!-- ADMIN ACTIONS -->
 
           <div class="admin-actions">
+
 
             <button
               id="adminUsersBtn"
@@ -1796,77 +1704,6 @@
 
         </div>
 
-
-        <!-- ADMIN DASHBOARD CREDIT INFO -->
-
-        <div class="admin-card admin-credit-card">
-
-          <div class="admin-credit-header">
-
-            <div>
-
-              <span>
-                Total Credits
-              </span>
-
-              <h2>
-                ∞
-              </h2>
-
-            </div>
-
-
-            <div class="admin-unlimited-badge">
-              ∞ UNLIMITED
-            </div>
-
-          </div>
-
-
-          <div class="admin-credit-stats">
-
-            <div>
-
-              <span>
-                Available
-              </span>
-
-              <strong>
-                Unlimited
-              </strong>
-
-            </div>
-
-
-            <div>
-
-              <span>
-                Used
-              </span>
-
-              <strong>
-                Unlimited
-              </strong>
-
-            </div>
-
-
-            <div>
-
-              <span>
-                Remaining
-              </span>
-
-              <strong>
-                Unlimited
-              </strong>
-
-            </div>
-
-          </div>
-
-        </div>
-
       </section>
 
 
@@ -1884,8 +1721,82 @@
 
 
   <!-- =====================================================
-       JAVASCRIPT
+       LOGIN AUTOFILL PROTECTION
        ===================================================== -->
+
+  <script>
+
+    function forceEmptyLoginFields() {
+
+      const email =
+        document.getElementById("authEmail");
+
+      const password =
+        document.getElementById("authPassword");
+
+      const name =
+        document.getElementById("authName");
+
+
+      if (email) {
+        email.value = "";
+        email.setAttribute("value", "");
+      }
+
+
+      if (password) {
+        password.value = "";
+        password.setAttribute("value", "");
+      }
+
+
+      if (name) {
+        name.value = "";
+      }
+
+    }
+
+
+    /*
+       Clear fields when page opens.
+    */
+
+    forceEmptyLoginFields();
+
+
+    /*
+       Browser back/forward cache.
+    */
+
+    window.addEventListener(
+      "pageshow",
+      forceEmptyLoginFields
+    );
+
+
+    /*
+       Extra protection against browser autofill.
+    */
+
+    setTimeout(
+      forceEmptyLoginFields,
+      100
+    );
+
+    setTimeout(
+      forceEmptyLoginFields,
+      500
+    );
+
+    setTimeout(
+      forceEmptyLoginFields,
+      1500
+    );
+
+  </script>
+
+
+  <!-- APP JS -->
 
   <script src="app.js"></script>
 
