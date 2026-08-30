@@ -16,24 +16,30 @@ const SUPABASE_KEY =
 
 
 /* =========================================================
+   ADMIN CONFIG
+   ========================================================= */
+
+const ADMIN_EMAIL =
+  "daimvirk555@gmail.com";
+
+
+/* =========================================================
    SUPABASE CLIENT
    ONLY ONE CLIENT
    ========================================================= */
+
 let supabaseClient = null;
 
 if (
-    window.supabase &&
-    typeof window.supabase.createClient === "function"
+  window.supabase &&
+  typeof window.supabase.createClient === "function"
 ) {
-    supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
     );
 } else {
-    console.error("Supabase library was not loaded.");
-}
-
-const ADMIN_EMAIL = "daimvirk555@gmail.com";
   console.error(
     "Supabase library was not loaded."
   );
@@ -41,7 +47,7 @@ const ADMIN_EMAIL = "daimvirk555@gmail.com";
 
 
 /* =========================================================
-   GLOBAL USER / ADMIN STATE
+   GLOBAL AUTH STATE
    ========================================================= */
 
 let currentUser = null;
@@ -105,12 +111,29 @@ function showAuthMessage(
     return;
   }
 
-  authMessage.textContent = message;
+  authMessage.textContent =
+    message;
 
   authMessage.style.color =
     error
       ? "#ff5c5c"
       : "#22c55e";
+}
+
+
+/* =========================================================
+   ADMIN EMAIL CHECK
+   ========================================================= */
+
+function isAdminEmail(email) {
+  if (!email) {
+    return false;
+  }
+
+  return (
+    email.trim().toLowerCase() ===
+    ADMIN_EMAIL.trim().toLowerCase()
+  );
 }
 
 
@@ -122,7 +145,9 @@ authSwitch?.addEventListener(
   "click",
   () => {
 
-    signupMode = !signupMode;
+    signupMode =
+      !signupMode;
+
 
     if (signupMode) {
 
@@ -137,7 +162,8 @@ authSwitch?.addEventListener(
       }
 
       if (authName) {
-        authName.style.display = "block";
+        authName.style.display =
+          "block";
       }
 
       if (authButton) {
@@ -152,6 +178,7 @@ authSwitch?.addEventListener(
 
       authSwitch.textContent =
         "Sign In";
+
 
       if (forgotPassword) {
         forgotPassword.style.display =
@@ -171,7 +198,8 @@ authSwitch?.addEventListener(
       }
 
       if (authName) {
-        authName.style.display = "none";
+        authName.style.display =
+          "none";
       }
 
       if (authButton) {
@@ -187,11 +215,13 @@ authSwitch?.addEventListener(
       authSwitch.textContent =
         "Create Account";
 
+
       if (forgotPassword) {
         forgotPassword.style.display =
           "block";
       }
     }
+
 
     showAuthMessage("");
   }
@@ -199,7 +229,7 @@ authSwitch?.addEventListener(
 
 
 /* =========================================================
-   LOGIN / SIGNUP BUTTON
+   LOGIN / SIGNUP
    ========================================================= */
 
 authButton?.addEventListener(
@@ -216,6 +246,7 @@ authButton?.addEventListener(
       return;
     }
 
+
     const email =
       authEmail?.value.trim() || "";
 
@@ -226,9 +257,9 @@ authButton?.addEventListener(
       authName?.value.trim() || "";
 
 
-    /* -------------------------
+    /* -------------------------------------------------------
        VALIDATION
-       ------------------------- */
+       ------------------------------------------------------- */
 
     if (!email || !password) {
 
@@ -252,11 +283,23 @@ authButton?.addEventListener(
     }
 
 
-    /* -------------------------
-       BUTTON STATE
-       ------------------------- */
+    if (password.length < 6) {
 
-    authButton.disabled = true;
+      showAuthMessage(
+        "Password must be at least 6 characters.",
+        true
+      );
+
+      return;
+    }
+
+
+    /* -------------------------------------------------------
+       BUTTON STATE
+       ------------------------------------------------------- */
+
+    authButton.disabled =
+      true;
 
     showAuthMessage(
       "Please wait..."
@@ -292,7 +335,15 @@ authButton?.addEventListener(
         }
 
 
+        /*
+           If Supabase email confirmation is ON,
+           session can be null.
+        */
+
         if (data?.session) {
+
+          currentUser =
+            data.user || null;
 
           showAuthMessage(
             "Account created successfully!"
@@ -305,47 +356,58 @@ authButton?.addEventListener(
         } else {
 
           showAuthMessage(
-            "Account created! Check your email to verify your account."
+            "Account created. Please verify your email, then sign in."
           );
         }
+
+
+        return;
+      }
 
 
       /* =====================================================
          LOGIN
          ===================================================== */
 
-      } else {
-
-        const {
-          data,
-          error
-        } =
-          await supabaseClient.auth
-            .signInWithPassword({
-              email: email,
-              password: password
-            });
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth
+          .signInWithPassword({
+            email: email,
+            password: password
+          });
 
 
-        if (error) {
-          throw error;
-        }
-
-
-        currentUser =
-          data?.user || null;
-
-
-        showAuthMessage(
-          "Login successful!"
-        );
-
-
-        await showApp();
-
-        await checkAdminAccess();
+      if (error) {
+        throw error;
       }
 
+
+      if (!data?.user) {
+
+        showAuthMessage(
+          "Login failed. User was not returned.",
+          true
+        );
+
+        return;
+      }
+
+
+      currentUser =
+        data.user;
+
+
+      showAuthMessage(
+        "Login successful!"
+      );
+
+
+      await showApp();
+
+      await checkAdminAccess();
 
     } catch (error) {
 
@@ -354,15 +416,32 @@ authButton?.addEventListener(
         error
       );
 
-      showAuthMessage(
+
+      let message =
         error?.message ||
-        "Something went wrong. Please try again.",
+        "Something went wrong. Please try again.";
+
+
+      if (
+        message
+          .toLowerCase()
+          .includes("invalid login credentials")
+      ) {
+
+        message =
+          "Invalid email or password.";
+      }
+
+
+      showAuthMessage(
+        message,
         true
       );
 
     } finally {
 
-      authButton.disabled = false;
+      authButton.disabled =
+        false;
     }
   }
 );
@@ -431,13 +510,13 @@ forgotPassword?.addEventListener(
         "Password reset email sent."
       );
 
-
     } catch (error) {
 
       console.error(
         "Password reset error:",
         error
       );
+
 
       showAuthMessage(
         error?.message ||
@@ -456,7 +535,6 @@ forgotPassword?.addEventListener(
 async function showApp() {
 
   if (authScreen) {
-
     authScreen.style.display =
       "none";
   }
@@ -482,37 +560,39 @@ async function showApp() {
     }
 
 
-    if (data?.user) {
-
-      currentUser =
-        data.user;
-
-
-      const userName =
-        data.user.user_metadata
-          ?.full_name ||
-        data.user.email
-          ?.split("@")[0] ||
-        "Viky User";
-
-
-      document
-        .querySelectorAll("body *")
-        .forEach(
-          (el) => {
-
-            if (
-              el.children.length === 0 &&
-              el.textContent.trim() ===
-                "Viky User"
-            ) {
-
-              el.textContent =
-                userName;
-            }
-          }
-        );
+    if (!data?.user) {
+      return;
     }
+
+
+    currentUser =
+      data.user;
+
+
+    const userName =
+      data.user.user_metadata
+        ?.full_name ||
+      data.user.email
+        ?.split("@")[0] ||
+      "Viky User";
+
+
+    document
+      .querySelectorAll("body *")
+      .forEach(
+        (element) => {
+
+          if (
+            element.children.length === 0 &&
+            element.textContent.trim() ===
+              "Viky User"
+          ) {
+
+            element.textContent =
+              userName;
+          }
+        }
+      );
 
   } catch (error) {
 
@@ -581,7 +661,6 @@ async function checkLogin() {
       showLogin();
     }
 
-
   } catch (error) {
 
     console.error(
@@ -602,25 +681,20 @@ if (supabaseClient) {
 
   supabaseClient.auth
     .onAuthStateChange(
-      async (
-        event,
-        session
-      ) => {
+      (event, session) => {
 
         if (session) {
 
           currentUser =
             session.user;
 
-          await showApp();
-
           /*
-             Delay admin check slightly so
-             Supabase auth state is settled.
+             Give the current event time to finish.
           */
 
           setTimeout(
             () => {
+              showApp();
               checkAdminAccess();
             },
             0
@@ -628,9 +702,11 @@ if (supabaseClient) {
 
         } else {
 
-          currentUser = null;
+          currentUser =
+            null;
 
-          isAdmin = false;
+          isAdmin =
+            false;
 
           hideAdminNav();
 
@@ -666,14 +742,15 @@ async function logout() {
     }
 
 
-    currentUser = null;
+    currentUser =
+      null;
 
-    isAdmin = false;
+    isAdmin =
+      false;
 
     hideAdminNav();
 
     showLogin();
-
 
   } catch (error) {
 
@@ -681,6 +758,7 @@ async function logout() {
       "Logout error:",
       error
     );
+
 
     alert(
       error?.message ||
@@ -691,19 +769,23 @@ async function logout() {
 
 
 /*
-   This lets HTML use:
+   Allows HTML:
    onclick="logout()"
 */
 
-window.logout = logout;
+window.logout =
+  logout;
 
 
 /* =========================================================
    BASIC DASHBOARD
    ========================================================= */
 
-let mode = "text";
-let credits = 100;
+let mode =
+  "text";
+
+let credits =
+  100;
 
 
 const $ =
@@ -762,7 +844,8 @@ const accountPage =
 
 function setMode(m) {
 
-  mode = m;
+  mode =
+    m;
 
 
   $$(".mode").forEach(
@@ -1291,7 +1374,8 @@ $("#generate")
       }
 
 
-      button.disabled = true;
+      button.disabled =
+        true;
 
 
       button.innerHTML =
@@ -1327,7 +1411,8 @@ $("#generate")
               )
             ) {
 
-              list.innerHTML = "";
+              list.innerHTML =
+                "";
             }
 
 
@@ -1407,7 +1492,8 @@ function buy(plan) {
 }
 
 
-window.buy = buy;
+window.buy =
+  buy;
 
 
 /* =========================================================
@@ -1417,6 +1503,9 @@ window.buy = buy;
 async function checkAdminAccess() {
 
   if (!supabaseClient) {
+
+    isAdmin =
+      false;
 
     hideAdminNav();
 
@@ -1445,9 +1534,11 @@ async function checkAdminAccess() {
 
     if (!user) {
 
-      currentUser = null;
+      currentUser =
+        null;
 
-      isAdmin = false;
+      isAdmin =
+        false;
 
       hideAdminNav();
 
@@ -1460,39 +1551,74 @@ async function checkAdminAccess() {
 
 
     /* =====================================================
-       CHECK USER ROLE
+       PRIMARY ADMIN CHECK
+       EMAIL
        ===================================================== */
 
-    const {
-      data: roleRow,
-      error: roleError
-    } =
-      await supabaseClient
-        .from("user_roles")
-        .select("role")
-        .eq(
-          "user_id",
-          user.id
-        )
-        .maybeSingle();
+    if (
+      isAdminEmail(user.email)
+    ) {
+
+      isAdmin =
+        true;
+
+    } else {
+
+      isAdmin =
+        false;
 
 
-    if (roleError) {
+      /*
+         Optional role-table check.
+         If user_roles exists and contains
+         role = admin, that user can also
+         receive admin access.
+      */
 
-      console.error(
-        "Admin role check failed:",
-        roleError
-      );
+      try {
 
-      hideAdminNav();
+        const {
+          data: roleRow,
+          error: roleError
+        } =
+          await supabaseClient
+            .from("user_roles")
+            .select("role")
+            .eq(
+              "user_id",
+              user.id
+            )
+            .maybeSingle();
 
-      return;
+
+        if (
+          !roleError &&
+          roleRow?.role === "admin"
+        ) {
+
+          isAdmin =
+            true;
+        }
+
+      } catch (roleCheckError) {
+
+        /*
+           Role table is optional.
+           Do not block normal login
+           if role table is unavailable.
+        */
+
+        console.warn(
+          "Optional admin role check skipped:",
+          roleCheckError
+        );
+      }
     }
 
 
-    isAdmin =
-      roleRow?.role === "admin";
-
+    /* =====================================================
+       SHOW / HIDE ADMIN NAV
+       ===================================================== */
 
     if (isAdmin) {
 
@@ -1525,12 +1651,10 @@ async function checkAdminAccess() {
           user.email || "—";
       }
 
-
     } else {
 
       hideAdminNav();
     }
-
 
   } catch (error) {
 
@@ -1539,7 +1663,35 @@ async function checkAdminAccess() {
       error
     );
 
-    hideAdminNav();
+
+    /*
+       If the logged-in email is the
+       configured Admin email, keep
+       Admin access even if optional
+       role checking fails.
+    */
+
+    if (
+      isAdminEmail(
+        currentUser?.email
+      )
+    ) {
+
+      isAdmin =
+        true;
+
+      $("#adminNav")
+        ?.classList.remove(
+          "hidden"
+        );
+
+    } else {
+
+      isAdmin =
+        false;
+
+      hideAdminNav();
+    }
   }
 }
 
@@ -1660,7 +1812,7 @@ $("#adminUsersBtn")
 
 
       box.textContent =
-        "User management needs a secure backend/Edge Function. Do not expose the Supabase service_role key in the frontend.";
+        "User management needs a secure backend/Edge Function. Never expose the Supabase service_role key in frontend code.";
     }
   );
 
@@ -1688,7 +1840,7 @@ $("#adminCreditsBtn")
 
 
       box.textContent =
-        "Credits management is ready for the next backend step.";
+        "Credits management is ready for the backend step.";
     }
   );
 
@@ -1716,7 +1868,7 @@ $("#adminVideosBtn")
 
 
       box.textContent =
-        "Video management is ready for the next backend step.";
+        "Video management is ready for the backend step.";
     }
   );
 
@@ -1744,7 +1896,7 @@ $("#adminSettingsBtn")
 
 
       box.textContent =
-        "Admin settings are ready for the next backend step.";
+        "Admin settings are ready for the backend step.";
     }
   );
 
