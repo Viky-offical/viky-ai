@@ -329,9 +329,6 @@ let supabaseClient=null;
 let currentUser=null;
 let isAdmin=false;
 
-
-/* Initialize Supabase */
-
 function initSupabaseAdmin(){
 
   const url=window.VIKY_SUPABASE_URL;
@@ -362,9 +359,6 @@ function initSupabaseAdmin(){
   }
 }
 
-
-/* Check logged-in user and admin role */
-
 async function checkAdminAccess(){
 
   if(!supabaseClient){
@@ -388,7 +382,6 @@ async function checkAdminAccess(){
 
     currentUser=user;
 
-
     const {
       data:roleRow,
       error:roleError
@@ -398,7 +391,6 @@ async function checkAdminAccess(){
         .select("role")
         .eq("user_id",user.id)
         .maybeSingle();
-
 
     if(roleError){
 
@@ -412,10 +404,8 @@ async function checkAdminAccess(){
       return;
     }
 
-
     isAdmin=
       roleRow?.role==="admin";
-
 
     if(isAdmin){
 
@@ -453,18 +443,12 @@ async function checkAdminAccess(){
   }
 }
 
-
-/* Hide Admin Dashboard from normal users */
-
 function hideAdminNav(){
 
   $("#adminNav")
     ?.classList.add("hidden");
 
 }
-
-
-/* Open Admin Dashboard */
 
 function showAdminPage(){
 
@@ -477,19 +461,15 @@ function showAdminPage(){
     return;
   }
 
-
   document
     .querySelector(".content")
     ?.classList.add("hidden");
 
-
   accountPage
     ?.classList.add("hidden");
 
-
   $("#adminPage")
     ?.classList.remove("hidden");
-
 
   if($("#adminRole")){
     $("#adminRole").textContent=
@@ -508,9 +488,6 @@ function showAdminPage(){
 
 }
 
-
-/* Back button */
-
 $("#backFromAdmin")
   ?.addEventListener(
     "click",
@@ -521,9 +498,6 @@ $("#backFromAdmin")
       showDashboard();
     }
   );
-
-
-/* Admin Users */
 
 $("#adminUsersBtn")
   ?.addEventListener(
@@ -542,9 +516,6 @@ $("#adminUsersBtn")
     }
   );
 
-
-/* Admin Credits */
-
 $("#adminCreditsBtn")
   ?.addEventListener(
     "click",
@@ -561,9 +532,6 @@ $("#adminCreditsBtn")
 
     }
   );
-
-
-/* Admin Videos */
 
 $("#adminVideosBtn")
   ?.addEventListener(
@@ -582,9 +550,6 @@ $("#adminVideosBtn")
     }
   );
 
-
-/* Admin Settings */
-
 $("#adminSettingsBtn")
   ?.addEventListener(
     "click",
@@ -602,9 +567,6 @@ $("#adminSettingsBtn")
     }
   );
 
-
-/* Admin navigation */
-
 $$("[data-page]").forEach(x=>{
 
   x.addEventListener(
@@ -621,9 +583,6 @@ $$("[data-page]").forEach(x=>{
   );
 
 });
-
-
-/* Start Supabase */
 
 document.addEventListener(
   "DOMContentLoaded",
