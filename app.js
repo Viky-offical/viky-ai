@@ -1,7 +1,8 @@
 /* =========================================================
    VIKY AI
    SUPABASE AUTH + ADMIN + USER + SESSION CONTROL
-   COMPLETE app.js
+   ADMIN = UNLIMITED CREDITS
+   LOGIN FIELDS ALWAYS EMPTY
    ========================================================= */
 
 
@@ -18,7 +19,6 @@ const SUPABASE_KEY =
 
 /* =========================================================
    ADMIN EMAIL
-   ONLY THIS EMAIL IS ADMIN
    ========================================================= */
 
 const ADMIN_EMAIL =
@@ -30,14 +30,15 @@ const ADMIN_EMAIL =
    ========================================================= */
 
 let supabaseClient = null;
-
 let currentUser = null;
-
 let isAdmin = false;
-
 let signupMode = false;
-
 let mode = "text";
+
+/*
+   Normal users start with 100 credits.
+   Admin always uses Infinity.
+*/
 
 let credits = 100;
 
@@ -53,6 +54,20 @@ function $(selector) {
 
 function $$(selector) {
   return document.querySelectorAll(selector);
+}
+
+
+function isCurrentAdmin() {
+
+  if (!currentUser?.email) {
+    return false;
+  }
+
+  return (
+    currentUser.email.trim().toLowerCase() ===
+    ADMIN_EMAIL.trim().toLowerCase()
+  );
+
 }
 
 
@@ -74,6 +89,37 @@ function showAuthMessage(message, isError = false) {
     isError
       ? "#ff5c5c"
       : "#22c55e";
+
+}
+
+
+/* =========================================================
+   CLEAR LOGIN FIELDS
+   ========================================================= */
+
+function clearLoginFields() {
+
+  const email = $("#authEmail");
+  const password = $("#authPassword");
+  const name = $("#authName");
+
+  if (email) {
+    email.value = "";
+    email.removeAttribute("value");
+  }
+
+  if (password) {
+    password.value = "";
+    password.removeAttribute("value");
+  }
+
+  if (name) {
+    name.value = "";
+    name.removeAttribute("value");
+  }
+
+  showAuthMessage("");
+
 }
 
 
@@ -92,6 +138,7 @@ function showLogin() {
   clearLoginFields();
 
   updateRoleUI(null);
+
 }
 
 
@@ -106,33 +153,6 @@ function hideLogin() {
   if (authScreen) {
     authScreen.style.display = "none";
   }
-
-}
-
-
-/* =========================================================
-   CLEAR LOGIN FIELDS
-   ========================================================= */
-
-function clearLoginFields() {
-
-  const email = $("#authEmail");
-  const password = $("#authPassword");
-  const name = $("#authName");
-
-  if (email) {
-    email.value = "";
-  }
-
-  if (password) {
-    password.value = "";
-  }
-
-  if (name) {
-    name.value = "";
-  }
-
-  showAuthMessage("");
 
 }
 
@@ -188,14 +208,11 @@ function updateRoleUI(user) {
       .toLowerCase();
 
 
-  const adminEmail =
+  const admin =
+    email ===
     ADMIN_EMAIL
       .trim()
       .toLowerCase();
-
-
-  const admin =
-    email === adminEmail;
 
 
   isAdmin = admin;
@@ -252,6 +269,292 @@ function updateRoleUI(user) {
 
 
 /* =========================================================
+   UPDATE CREDIT UI
+   ========================================================= */
+
+function updateCreditUI() {
+
+  const creditCount =
+    $("#creditCount");
+
+
+  if (isAdmin) {
+
+    credits = Infinity;
+
+    if (creditCount) {
+      creditCount.textContent = "∞";
+      creditCount.title = "Unlimited Credits";
+    }
+
+  } else {
+
+    if (!Number.isFinite(credits)) {
+      credits = 100;
+    }
+
+    if (creditCount) {
+      creditCount.textContent =
+        String(credits);
+    }
+
+  }
+
+
+  /*
+     Update admin/user plan information.
+  */
+
+  const unlimited =
+    document.querySelector(".unlimited");
+
+  const planParagraph =
+    document.querySelector(".plan p");
+
+  const planSmall =
+    document.querySelector(".plan small");
+
+  const planBar =
+    document.querySelector(".plan .bar");
+
+  const planBarInner =
+    document.querySelector(".plan .bar i");
+
+
+  if (isAdmin) {
+
+    if (unlimited) {
+      unlimited.innerHTML =
+        "∞ <b>Admin Unlimited</b>";
+    }
+
+    if (planParagraph) {
+      planParagraph.textContent =
+        "Unlimited credits • All features unlocked";
+    }
+
+    if (planSmall) {
+      planSmall.textContent =
+        "Unlimited generation available for admin";
+    }
+
+    if (planBar) {
+      planBar.style.display = "none";
+    }
+
+    if (planBarInner) {
+      planBarInner.style.width = "100%";
+    }
+
+  } else {
+
+    if (unlimited) {
+      unlimited.innerHTML =
+        "∞ <b>Free</b>";
+    }
+
+    if (planParagraph) {
+      planParagraph.textContent =
+        "100 welcome credits";
+    }
+
+    if (planSmall) {
+      planSmall.textContent =
+        `${credits} credits remaining`;
+    }
+
+    if (planBar) {
+      planBar.style.display = "block";
+    }
+
+    if (planBarInner) {
+      const percentage =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            (credits / 100) * 100
+          )
+        );
+
+      planBarInner.style.width =
+        `${percentage}%`;
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   ADMIN DASHBOARD UI
+   ========================================================= */
+
+function setupAdminDashboard() {
+
+  if (!isAdmin) {
+    return;
+  }
+
+
+  /*
+     Unlimited credits
+  */
+
+  credits = Infinity;
+
+  updateCreditUI();
+
+
+  /*
+     Make admin dashboard visually clear.
+  */
+
+  const heroTitle =
+    document.querySelector(".hero-title h1");
+
+  const heroSubtitle =
+    document.querySelector(".hero-title p");
+
+
+  if (heroTitle) {
+    heroTitle.innerHTML =
+      'Admin <span class="admin-highlight">AI Video Dashboard</span>';
+  }
+
+
+  if (heroSubtitle) {
+    heroSubtitle.textContent =
+      "Full access • Unlimited Credits • All AI features unlocked";
+  }
+
+
+  /*
+     Change generate button text for admin.
+  */
+
+  const generate =
+    $("#generate");
+
+  if (generate) {
+
+    const span =
+      generate.querySelector("span");
+
+    if (span) {
+      span.textContent =
+        "∞ Unlimited";
+    }
+
+  }
+
+
+  /*
+     Change generation note.
+  */
+
+  const note =
+    document.querySelector(".note");
+
+  if (note) {
+
+    note.innerHTML =
+      "Admin Access: <b>Unlimited Credits</b> • All premium features unlocked.";
+
+  }
+
+
+  /*
+     Upgrade card for admin.
+  */
+
+  const sideCard =
+    document.querySelector(".side-card");
+
+  if (sideCard) {
+
+    const title =
+      sideCard.querySelector("b");
+
+    const paragraph =
+      sideCard.querySelector("p");
+
+    const button =
+      sideCard.querySelector("button");
+
+
+    if (title) {
+      title.textContent =
+        "Viky AI ADMIN";
+    }
+
+    if (paragraph) {
+      paragraph.textContent =
+        "Admin account has unlimited credits and full access to all features.";
+    }
+
+    if (button) {
+      button.textContent =
+        "ADMIN ACCESS";
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   NORMAL USER DASHBOARD UI
+   ========================================================= */
+
+function setupUserDashboard() {
+
+  if (isAdmin) {
+    return;
+  }
+
+
+  if (!Number.isFinite(credits)) {
+    credits = 100;
+  }
+
+
+  const heroTitle =
+    document.querySelector(".hero-title h1");
+
+  const heroSubtitle =
+    document.querySelector(".hero-title p");
+
+
+  if (heroTitle) {
+    heroTitle.textContent =
+      "Generate AI Video";
+  }
+
+
+  if (heroSubtitle) {
+    heroSubtitle.textContent =
+      "Choose a mode and turn your idea into a video.";
+  }
+
+
+  const note =
+    document.querySelector(".note");
+
+  if (note) {
+
+    note.innerHTML =
+      'Generation cost: <b>20 credits</b> per video. Your free account starts with <b>100 credits</b>.';
+
+  }
+
+
+  updateCreditUI();
+
+}
+
+
+/* =========================================================
    SHOW APPLICATION
    ========================================================= */
 
@@ -262,15 +565,21 @@ async function showApp() {
     return;
   }
 
+
   hideLogin();
 
   updateRoleUI(currentUser);
+
 
   const userName =
     currentUser.user_metadata?.full_name ||
     currentUser.email?.split("@")[0] ||
     "Viky User";
 
+
+  /*
+     Update only exact "Viky User" text.
+  */
 
   document
     .querySelectorAll("body *")
@@ -307,6 +616,35 @@ async function showApp() {
     profileEmail.value =
       currentUser.email || "";
   }
+
+
+  /*
+     IMPORTANT:
+     Admin = unlimited
+     User = 100
+  */
+
+  if (isCurrentAdmin()) {
+
+    isAdmin = true;
+    credits = Infinity;
+
+    setupAdminDashboard();
+
+  } else {
+
+    isAdmin = false;
+
+    if (!Number.isFinite(credits)) {
+      credits = 100;
+    }
+
+    setupUserDashboard();
+
+  }
+
+
+  updateCreditUI();
 
 }
 
@@ -364,11 +702,9 @@ async function checkAdminAccess() {
     if (!user) {
 
       currentUser = null;
-
       isAdmin = false;
 
       hideAdminNav();
-
       updateRoleUI(null);
 
       return false;
@@ -408,6 +744,8 @@ async function checkAdminAccess() {
 
     if (isAdmin) {
 
+      credits = Infinity;
+
       if (adminRole) {
         adminRole.textContent =
           "Admin";
@@ -415,7 +753,7 @@ async function checkAdminAccess() {
 
       if (adminStatus) {
         adminStatus.textContent =
-          "✓ Authorized";
+          "✓ Authorized • Unlimited";
       }
 
       if (adminEmail) {
@@ -423,8 +761,16 @@ async function checkAdminAccess() {
           user.email || "—";
       }
 
+    } else {
+
+      if (!Number.isFinite(credits)) {
+        credits = 100;
+      }
+
     }
 
+
+    updateCreditUI();
 
     return isAdmin;
 
@@ -619,8 +965,12 @@ async function loginUser() {
 
 
   if (button) {
+
     button.disabled = true;
-    button.textContent = "Signing In...";
+
+    button.textContent =
+      "Signing In...";
+
   }
 
 
@@ -638,9 +988,8 @@ async function loginUser() {
       await supabaseClient.auth
         .signInWithPassword({
 
-          email: email,
-
-          password: password
+          email,
+          password
 
         });
 
@@ -668,20 +1017,16 @@ async function loginUser() {
     await showApp();
 
 
-    showAuthMessage(
-      "Login successful!"
-    );
-
-
     /*
-       Keep login fields empty after login.
+       IMPORTANT:
+       Never keep credentials in fields.
     */
 
-    setTimeout(
-      () => {
-        clearLoginFields();
-      },
-      300
+    clearLoginFields();
+
+
+    showAuthMessage(
+      "Login successful!"
     );
 
 
@@ -697,10 +1042,6 @@ async function loginUser() {
       error?.message ||
       "Login failed. Please try again.";
 
-
-    /*
-       Make the message easier to understand.
-    */
 
     if (
       message
@@ -847,16 +1188,13 @@ async function signupUser() {
       await supabaseClient.auth
         .signUp({
 
-          email: email,
-
-          password: password,
+          email,
+          password,
 
           options: {
 
             data: {
-
               full_name: name
-
             }
 
           }
@@ -868,11 +1206,6 @@ async function signupUser() {
       throw error;
     }
 
-
-    /*
-       Session exists when email confirmation
-       is disabled.
-    */
 
     if (
       data?.session &&
@@ -887,6 +1220,8 @@ async function signupUser() {
 
       await showApp();
 
+      clearLoginFields();
+
 
       showAuthMessage(
         "Account created successfully!"
@@ -894,10 +1229,6 @@ async function signupUser() {
 
 
     } else {
-
-      /*
-         Email confirmation is enabled.
-      */
 
       showAuthMessage(
         "Account created. Please verify your email, then Sign In."
@@ -958,44 +1289,29 @@ function setupAuth() {
     $("#forgotPassword");
 
 
-  /*
-     LOGIN / SIGNUP FORM
-     This fixes button problems.
-  */
-
   form?.addEventListener(
     "submit",
     async (event) => {
 
       event.preventDefault();
-
       event.stopPropagation();
 
 
       if (signupMode) {
-
         await signupUser();
-
       } else {
-
         await loginUser();
-
       }
 
     }
   );
 
 
-  /*
-     LOGIN / SIGNUP SWITCH
-  */
-
   authSwitch?.addEventListener(
     "click",
     (event) => {
 
       event.preventDefault();
-
       event.stopPropagation();
 
       setAuthMode(
@@ -1006,15 +1322,12 @@ function setupAuth() {
   );
 
 
-  /*
-     FORGOT PASSWORD
-  */
-
   forgotPassword?.addEventListener(
     "click",
     async (event) => {
 
       event.preventDefault();
+
 
       if (!supabaseClient) {
 
@@ -1099,7 +1412,7 @@ function setupAuth() {
 
 
 /* =========================================================
-   CHECK LOGIN
+   CHECK LOGIN / SESSION
    ========================================================= */
 
 async function checkLogin() {
@@ -1128,12 +1441,6 @@ async function checkLogin() {
     }
 
 
-    /*
-       Because persistSession is FALSE,
-       there should NOT be a saved session
-       after the browser is closed/reopened.
-    */
-
     if (data?.session?.user) {
 
       currentUser =
@@ -1148,8 +1455,9 @@ async function checkLogin() {
     } else {
 
       currentUser = null;
-
       isAdmin = false;
+
+      credits = 100;
 
       showLogin();
 
@@ -1165,8 +1473,8 @@ async function checkLogin() {
 
 
     currentUser = null;
-
     isAdmin = false;
+    credits = 100;
 
     showLogin();
 
@@ -1208,6 +1516,7 @@ function setupAuthStateListener() {
             async () => {
 
               await checkAdminAccess();
+              await showApp();
 
             },
             0
@@ -1217,8 +1526,8 @@ function setupAuthStateListener() {
         } else {
 
           currentUser = null;
-
           isAdmin = false;
+          credits = 100;
 
           hideAdminNav();
 
@@ -1243,8 +1552,8 @@ async function logout() {
   if (!supabaseClient) {
 
     currentUser = null;
-
     isAdmin = false;
+    credits = 100;
 
     showLogin();
 
@@ -1268,13 +1577,15 @@ async function logout() {
 
 
     currentUser = null;
-
     isAdmin = false;
+    credits = 100;
 
 
     hideAdminNav();
 
     updateRoleUI(null);
+
+    clearLoginFields();
 
     showLogin();
 
@@ -1453,6 +1764,9 @@ function showDashboard() {
     ?.classList
     .remove("hidden");
 
+
+  updateCreditUI();
+
 }
 
 
@@ -1519,7 +1833,7 @@ function showAccount(page) {
 
 function showAdminPage() {
 
-  if (!isAdmin) {
+  if (!isCurrentAdmin()) {
 
     alert(
       "Admin access required."
@@ -1528,6 +1842,10 @@ function showAdminPage() {
     return;
 
   }
+
+
+  isAdmin = true;
+  credits = Infinity;
 
 
   $(".content")
@@ -1558,7 +1876,7 @@ function showAdminPage() {
 
     $("#adminStatus")
       .textContent =
-      "✓ Authorized";
+      "✓ Authorized • Unlimited";
 
   }
 
@@ -1572,6 +1890,20 @@ function showAdminPage() {
 
   }
 
+
+  const adminMessage =
+    $("#adminMessage");
+
+  if (adminMessage) {
+
+    adminMessage.style.display =
+      "block";
+
+    adminMessage.textContent =
+      "Admin access active • Unlimited Credits • All features unlocked.";
+
+  }
+
 }
 
 
@@ -1581,10 +1913,20 @@ function showAdminPage() {
 
 function scrollToPricing() {
 
-  $("#pricing")
-    ?.scrollIntoView({
-      behavior: "smooth"
-    });
+  showDashboard();
+
+  setTimeout(
+    () => {
+
+      $("#pricing")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+    },
+    100
+  );
 
 }
 
@@ -1598,6 +1940,17 @@ window.scrollToPricing =
    ========================================================= */
 
 function buy(plan) {
+
+  if (isCurrentAdmin()) {
+
+    alert(
+      `Admin account already has Unlimited Credits and all premium features unlocked.`
+    );
+
+    return;
+
+  }
+
 
   alert(
     `${plan} selected. Payment gateway will be connected in the backend step.`
@@ -1949,7 +2302,14 @@ function setupDashboard() {
             : 20;
 
 
-        if (credits < cost) {
+        /*
+           ADMIN BYPASSES CREDIT CHECK.
+        */
+
+        if (
+          !isAdmin &&
+          credits < cost
+        ) {
 
           alert(
             `Not enough credits. This action needs ${cost} credits.`
@@ -1995,16 +2355,23 @@ function setupDashboard() {
         }
 
 
-        credits -= cost;
+        /*
+           Only NORMAL USERS lose credits.
+           ADMIN = Infinity forever.
+        */
 
+        if (!isAdmin) {
 
-        if ($("#creditCount")) {
+          credits -= cost;
 
-          $("#creditCount")
-            .textContent =
-            credits;
+        } else {
+
+          credits = Infinity;
 
         }
+
+
+        updateCreditUI();
 
 
         const button =
@@ -2037,7 +2404,14 @@ function setupDashboard() {
                 mode === "voice"
                   ? "VOICE"
                   : "VIDEO"
-              } <span>${cost} credits</span>`;
+              } <span>${
+                isAdmin
+                  ? "∞ Unlimited"
+                  : `${cost} credits`
+              }</span>`;
+
+
+            updateCreditUI();
 
 
             const list =
@@ -2082,7 +2456,13 @@ function setupDashboard() {
               <div class="thumb"></div>
               <div>
                 <b>${label}</b>
-                <small>✓ Demo complete • ${cost} credits</small>
+                <small>
+                  ✓ Demo complete • ${
+                    isAdmin
+                      ? "Unlimited Credits"
+                      : `${cost} credits`
+                  }
+                </small>
               </div>
             `;
 
@@ -2102,22 +2482,27 @@ function setupDashboard() {
   */
 
   const adminButtons = [
+
     [
       "#adminUsersBtn",
-      "User management requires a secure backend or Supabase Edge Function."
+      "👥 User Management opened."
     ],
+
     [
       "#adminCreditsBtn",
-      "Credits management requires a secure backend or Supabase Edge Function."
+      "💳 Credits Management opened. Admin has Unlimited Credits."
     ],
+
     [
       "#adminVideosBtn",
-      "Video management requires a secure backend or Supabase Edge Function."
+      "🎬 Video Management opened."
     ],
+
     [
       "#adminSettingsBtn",
-      "Admin settings require a secure backend or Supabase Edge Function."
+      "⚙ Admin Settings opened."
     ]
+
   ];
 
 
@@ -2128,7 +2513,7 @@ function setupDashboard() {
         "click",
         () => {
 
-          if (!isAdmin) {
+          if (!isCurrentAdmin()) {
 
             alert(
               "Admin access required."
@@ -2143,23 +2528,78 @@ function setupDashboard() {
             $("#adminMessage");
 
 
-          if (!box) {
-            return;
+          if (box) {
+
+            box.style.display =
+              "block";
+
+            box.textContent =
+              message;
+
           }
 
 
-          box.style.display =
-            "block";
-
-
-          box.textContent =
-            message;
+          alert(message);
 
         }
       );
 
     }
   );
+
+
+  /*
+     SAVE BUTTONS
+  */
+
+  $$(".save-btn")
+    .forEach(
+      (button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            alert(
+              "Settings saved successfully."
+            );
+
+          }
+        );
+
+      }
+    );
+
+
+  /*
+     UPGRADE BUTTONS
+  */
+
+  $$(".side-card button")
+    .forEach(
+      (button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            if (isAdmin) {
+
+              alert(
+                "Admin account already has Unlimited Credits and all features unlocked."
+              );
+
+            } else {
+
+              scrollToPricing();
+
+            }
+
+          }
+        );
+
+      }
+    );
 
 }
 
@@ -2187,23 +2627,18 @@ function createSupabaseClient() {
 
   try {
 
-    /*
-       IMPORTANT:
-
-       persistSession: false
-       --------------------
-       Supabase will NOT keep the login session
-       in browser localStorage.
-
-       Therefore after closing/reopening the website,
-       the user must login again.
-    */
-
     return window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_KEY,
       {
+
         auth: {
+
+          /*
+             CRITICAL:
+             Login is NOT saved in localStorage.
+             Browser close = login required again.
+          */
 
           persistSession: false,
 
@@ -2212,6 +2647,7 @@ function createSupabaseClient() {
           detectSessionInUrl: false
 
         }
+
       }
     );
 
@@ -2230,6 +2666,45 @@ function createSupabaseClient() {
 
 
 /* =========================================================
+   REMOVE ANY AUTOFILL VALUES
+   ========================================================= */
+
+function forceEmptyLoginFields() {
+
+  const email =
+    $("#authEmail");
+
+  const password =
+    $("#authPassword");
+
+  const name =
+    $("#authName");
+
+
+  [email, password, name]
+    .forEach(
+      (field) => {
+
+        if (!field) {
+          return;
+        }
+
+        field.value = "";
+
+        field.removeAttribute("value");
+
+        field.setAttribute(
+          "autocomplete",
+          "off"
+        );
+
+      }
+    );
+
+}
+
+
+/* =========================================================
    INITIALIZE
    ========================================================= */
 
@@ -2241,8 +2716,11 @@ async function initializeVikyAI() {
 
 
   /*
-     ALWAYS START WITH EMPTY LOGIN BOXES.
+     FIRST:
+     Empty login boxes.
   */
+
+  forceEmptyLoginFields();
 
   clearLoginFields();
 
@@ -2282,6 +2760,21 @@ async function initializeVikyAI() {
   */
 
   await checkLogin();
+
+
+  /*
+     FINAL SECURITY:
+     If login screen is visible, keep boxes empty.
+  */
+
+  if (
+    $("#authScreen") &&
+    $("#authScreen").style.display !== "none"
+  ) {
+
+    forceEmptyLoginFields();
+
+  }
 
 
   console.log(
