@@ -1,11 +1,7 @@
 /* =========================================================
    VIKY AI
    SUPABASE AUTH + ADMIN + DASHBOARD
-   ========================================================= */
-
-
-/* =========================================================
-   SUPABASE CONFIG
+   COMPLETE app.js
    ========================================================= */
 
 const SUPABASE_URL =
@@ -23,15 +19,11 @@ const ADMIN_EMAIL =
    ========================================================= */
 
 let supabaseClient = null;
-
 let currentUser = null;
-
 let isAdmin = false;
-
 let signupMode = false;
 
 let mode = "text";
-
 let credits = 100;
 
 
@@ -53,20 +45,15 @@ function $$(selector) {
    AUTH MESSAGE
    ========================================================= */
 
-function showAuthMessage(
-  message = "",
-  error = false
-) {
+function showAuthMessage(message, error = false) {
 
-  const element =
-    $("#authMessage");
+  const element = $("#authMessage");
 
   if (!element) {
     return;
   }
 
-  element.textContent =
-    message;
+  element.textContent = message;
 
   element.style.color =
     error
@@ -85,9 +72,73 @@ function showLogin() {
     $("#authScreen");
 
   if (authScreen) {
+    authScreen.style.display = "flex";
+  }
+}
 
-    authScreen.style.display =
-      "flex";
+
+/* =========================================================
+   SHOW APP
+   ========================================================= */
+
+async function showApp() {
+
+  const authScreen =
+    $("#authScreen");
+
+  if (authScreen) {
+    authScreen.style.display = "none";
+  }
+
+  if (!supabaseClient) {
+    return;
+  }
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getUser();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.user) {
+
+      currentUser =
+        data.user;
+
+      const userName =
+        data.user.user_metadata?.full_name ||
+        data.user.email?.split("@")[0] ||
+        "Viky User";
+
+      document
+        .querySelectorAll("body *")
+        .forEach((element) => {
+
+          if (
+            element.children.length === 0 &&
+            element.textContent.trim() === "Viky User"
+          ) {
+
+            element.textContent =
+              userName;
+          }
+
+        });
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Could not load user:",
+      error
+    );
+
   }
 }
 
@@ -105,53 +156,166 @@ function hideAdminNav() {
 
 
 /* =========================================================
-   INITIALIZE SUPABASE
+   ADMIN ACCESS
    ========================================================= */
 
-function initSupabase() {
-
-  if (
-    !window.supabase ||
-    typeof window.supabase.createClient !==
-      "function"
-  ) {
-
-    console.error(
-      "Supabase library was not loaded."
-    );
-
-    showAuthMessage(
-      "Supabase library was not loaded. Check your HTML.",
-      true
-    );
-
-    return false;
-  }
-
+async function checkAdminAccess() {
 
   if (!supabaseClient) {
 
-    supabaseClient =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-      );
+    isAdmin = false;
+
+    hideAdminNav();
+
+    return;
   }
 
+  try {
 
-  return true;
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getUser();
+
+    if (error) {
+      throw error;
+    }
+
+    const user =
+      data?.user;
+
+    if (!user) {
+
+      currentUser = null;
+
+      isAdmin = false;
+
+      hideAdminNav();
+
+      return;
+    }
+
+    currentUser =
+      user;
+
+
+    /* -----------------------------------------------------
+       ADMIN EMAIL
+       ----------------------------------------------------- */
+
+    const emailIsAdmin =
+      (user.email || "")
+        .toLowerCase() ===
+      ADMIN_EMAIL.toLowerCase();
+
+
+    /* -----------------------------------------------------
+       OPTIONAL DATABASE ROLE
+       ----------------------------------------------------- */
+
+    let databaseIsAdmin = false;
+
+    try {
+
+      const {
+        data: roleRow,
+        error: roleError
+      } =
+        await supabaseClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+      if (!roleError) {
+
+        databaseIsAdmin =
+          roleRow?.role === "admin";
+
+      }
+
+    } catch (roleCheckError) {
+
+      console.warn(
+        "Optional admin role check failed:",
+        roleCheckError
+      );
+
+    }
+
+
+    /* -----------------------------------------------------
+       FINAL ADMIN CHECK
+       ----------------------------------------------------- */
+
+    isAdmin =
+      emailIsAdmin ||
+      databaseIsAdmin;
+
+
+    if (isAdmin) {
+
+      $("#adminNav")
+        ?.classList
+        .remove("hidden");
+
+
+      if ($("#adminRole")) {
+
+        $("#adminRole")
+          .textContent =
+          "admin";
+
+      }
+
+
+      if ($("#adminStatus")) {
+
+        $("#adminStatus")
+          .textContent =
+          "✓ Authorized";
+
+      }
+
+
+      if ($("#adminEmail")) {
+
+        $("#adminEmail")
+          .textContent =
+          user.email || "—";
+
+      }
+
+    } else {
+
+      hideAdminNav();
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Admin access check error:",
+      error
+    );
+
+    isAdmin = false;
+
+    hideAdminNav();
+
+  }
 }
 
 
 /* =========================================================
-   LOGIN / SIGNUP UI
+   AUTH MODE
    ========================================================= */
 
-function setSignupMode(value) {
+function setAuthMode(isSignup) {
 
   signupMode =
-    value;
-
+    isSignup;
 
   const authTitle =
     $("#authTitle");
@@ -164,9 +328,6 @@ function setSignupMode(value) {
 
   const authButton =
     $("#authButton");
-
-  const authSwitch =
-    $("#authSwitch");
 
   const authSwitchText =
     $("#authSwitchText");
@@ -181,6 +342,7 @@ function setSignupMode(value) {
 
       authTitle.textContent =
         "Create your account";
+
     }
 
 
@@ -188,6 +350,7 @@ function setSignupMode(value) {
 
       authSubtitle.textContent =
         "Join Viky AI and start creating";
+
     }
 
 
@@ -195,6 +358,7 @@ function setSignupMode(value) {
 
       authName.style.display =
         "block";
+
     }
 
 
@@ -202,20 +366,15 @@ function setSignupMode(value) {
 
       authButton.textContent =
         "Create Account";
+
     }
 
 
     if (authSwitchText) {
 
       authSwitchText.textContent =
-        "Already have an account?";
-    }
+        "Already have an account? Sign In";
 
-
-    if (authSwitch) {
-
-      authSwitch.textContent =
-        "Sign In";
     }
 
 
@@ -223,6 +382,7 @@ function setSignupMode(value) {
 
       forgotPassword.style.display =
         "none";
+
     }
 
   } else {
@@ -231,6 +391,7 @@ function setSignupMode(value) {
 
       authTitle.textContent =
         "Welcome to Viky AI";
+
     }
 
 
@@ -238,6 +399,7 @@ function setSignupMode(value) {
 
       authSubtitle.textContent =
         "Sign in to continue";
+
     }
 
 
@@ -245,6 +407,7 @@ function setSignupMode(value) {
 
       authName.style.display =
         "none";
+
     }
 
 
@@ -252,20 +415,15 @@ function setSignupMode(value) {
 
       authButton.textContent =
         "Sign In";
+
     }
 
 
     if (authSwitchText) {
 
       authSwitchText.textContent =
-        "Don't have an account?";
-    }
+        "Don't have an account? Create Account";
 
-
-    if (authSwitch) {
-
-      authSwitch.textContent =
-        "Create Account";
     }
 
 
@@ -273,408 +431,357 @@ function setSignupMode(value) {
 
       forgotPassword.style.display =
         "block";
+
     }
+
   }
 
 
   showAuthMessage("");
+
 }
 
 
 /* =========================================================
-   LOGIN / SIGNUP
+   AUTH SETUP
    ========================================================= */
 
-async function handleAuth() {
+function setupAuth() {
+
+  const authSwitch =
+    $("#authSwitch");
 
   const authButton =
     $("#authButton");
 
-  const authEmail =
-    $("#authEmail");
-
-  const authPassword =
-    $("#authPassword");
-
-  const authName =
-    $("#authName");
+  const forgotPassword =
+    $("#forgotPassword");
 
 
-  if (
-    !supabaseClient &&
-    !initSupabase()
-  ) {
+  /* -------------------------------------------------------
+     LOGIN / SIGNUP SWITCH
+     ------------------------------------------------------- */
 
-    return;
-  }
+  authSwitch?.addEventListener(
+    "click",
+    (event) => {
 
+      event.preventDefault();
 
-  const email =
-    (
-      authEmail?.value ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
+      setAuthMode(
+        !signupMode
+      );
 
-
-  const password =
-    authPassword?.value ||
-    "";
-
-
-  const name =
-    (
-      authName?.value ||
-      ""
-    )
-      .trim();
-
-
-  /* =====================================================
-     VALIDATION
-     ===================================================== */
-
-  if (!email || !password) {
-
-    showAuthMessage(
-      "Please enter email and password.",
-      true
-    );
-
-    return;
-  }
-
-
-  if (
-    signupMode &&
-    !name
-  ) {
-
-    showAuthMessage(
-      "Please enter your name.",
-      true
-    );
-
-    return;
-  }
-
-
-  if (authButton) {
-
-    authButton.disabled =
-      true;
-  }
-
-
-  showAuthMessage(
-    signupMode
-      ? "Creating account..."
-      : "Signing in..."
+    }
   );
 
 
-  try {
+  /* -------------------------------------------------------
+     LOGIN / SIGNUP BUTTON
+     ------------------------------------------------------- */
 
-    /* ===================================================
-       SIGNUP
-       =================================================== */
+  authButton?.addEventListener(
+    "click",
+    async (event) => {
 
-    if (signupMode) {
-
-      const {
-        data,
-        error
-      } =
-        await supabaseClient
-          .auth
-          .signUp({
-
-            email: email,
-
-            password: password,
-
-            options: {
-
-              data: {
-
-                full_name:
-                  name
-              }
-            }
-          });
+      event.preventDefault();
 
 
-      if (error) {
-
-        throw error;
-      }
-
-
-      currentUser =
-        data?.user ||
-        null;
-
-
-      if (data?.session) {
+      if (!supabaseClient) {
 
         showAuthMessage(
-          "Account created successfully!"
+          "Supabase connection is not available.",
+          true
         );
 
+        return;
+      }
 
-        await showApp();
 
-        await checkAdminAccess();
+      const email =
+        ($("#authEmail")?.value || "")
+          .trim()
+          .toLowerCase();
 
-      } else {
+
+      const password =
+        $("#authPassword")?.value || "";
+
+
+      const name =
+        ($("#authName")?.value || "")
+          .trim();
+
+
+      /* ---------------------------------------------------
+         VALIDATION
+         --------------------------------------------------- */
+
+      if (!email || !password) {
 
         showAuthMessage(
-          "Account created. Check your email to verify the account, then Sign In."
+          "Please enter email and password.",
+          true
         );
+
+        return;
       }
 
 
-    /* ===================================================
-       LOGIN
-       =================================================== */
+      if (signupMode && !name) {
 
-    } else {
+        showAuthMessage(
+          "Please enter your name.",
+          true
+        );
 
-      const {
-        data,
-        error
-      } =
-        await supabaseClient
-          .auth
-          .signInWithPassword({
-
-            email: email,
-
-            password: password
-          });
-
-
-      if (error) {
-
-        throw error;
+        return;
       }
 
 
-      currentUser =
-        data?.user ||
-        null;
-
-
-      await showApp();
-
-      await checkAdminAccess();
+      authButton.disabled =
+        true;
 
 
       showAuthMessage(
-        "Login successful!"
+        "Please wait..."
       );
-    }
 
 
-  } catch (error) {
-
-    console.error(
-      "Authentication error:",
-      error
-    );
+      try {
 
 
-    showAuthMessage(
-      error?.message ||
-      "Login failed. Please check your email and password.",
-      true
-    );
+        /* =================================================
+           SIGNUP
+           ================================================= */
+
+        if (signupMode) {
+
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth.signUp({
+
+              email: email,
+
+              password: password,
+
+              options: {
+
+                data: {
+
+                  full_name:
+                    name
+
+                }
+
+              }
+
+            });
 
 
-  } finally {
-
-    if (authButton) {
-
-      authButton.disabled =
-        false;
-    }
-  }
-}
-
-
-/* =========================================================
-   FORGOT PASSWORD
-   ========================================================= */
-
-async function resetPassword() {
-
-  if (
-    !supabaseClient &&
-    !initSupabase()
-  ) {
-
-    return;
-  }
-
-
-  const email =
-    (
-      $("#authEmail")?.value ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-
-
-  if (!email) {
-
-    showAuthMessage(
-      "Enter your email first.",
-      true
-    );
-
-    return;
-  }
-
-
-  try {
-
-    showAuthMessage(
-      "Sending password reset email..."
-    );
-
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .auth
-        .resetPasswordForEmail(
-          email,
-          {
-
-            redirectTo:
-              window.location.origin
+          if (error) {
+            throw error;
           }
+
+
+          if (data?.session) {
+
+            currentUser =
+              data.user || null;
+
+
+            showAuthMessage(
+              "Account created successfully!"
+            );
+
+
+            await showApp();
+
+            await checkAdminAccess();
+
+          } else {
+
+            showAuthMessage(
+              "Account created! Check your email to verify your account."
+            );
+
+          }
+
+
+        /* =================================================
+           LOGIN
+           ================================================= */
+
+        } else {
+
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.auth
+              .signInWithPassword({
+
+                email:
+                  email,
+
+                password:
+                  password
+
+              });
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          currentUser =
+            data?.user || null;
+
+
+          showAuthMessage(
+            "Login successful!"
+          );
+
+
+          await showApp();
+
+          await checkAdminAccess();
+
+        }
+
+
+      } catch (error) {
+
+        console.error(
+          "Authentication error:",
+          error
         );
 
 
-    if (error) {
-
-      throw error;
-    }
-
-
-    showAuthMessage(
-      "Password reset email sent."
-    );
+        let message =
+          error?.message ||
+          "Login failed. Please try again.";
 
 
-  } catch (error) {
+        if (
+          error?.message ===
+          "Invalid login credentials"
+        ) {
 
-    console.error(
-      "Password reset error:",
-      error
-    );
+          message =
+            "Invalid email or password. Check the account and password in Supabase.";
 
-
-    showAuthMessage(
-      error?.message ||
-      "Unable to send password reset email.",
-      true
-    );
-  }
-}
-
-
-/* =========================================================
-   SHOW APP
-   ========================================================= */
-
-async function showApp() {
-
-  const authScreen =
-    $("#authScreen");
-
-
-  if (authScreen) {
-
-    authScreen.style.display =
-      "none";
-  }
-
-
-  if (!supabaseClient) {
-
-    return;
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .getUser();
-
-
-    if (error) {
-
-      throw error;
-    }
-
-
-    if (!data?.user) {
-
-      return;
-    }
-
-
-    currentUser =
-      data.user;
-
-
-    const userName =
-      data.user
-        .user_metadata
-        ?.full_name ||
-
-      data.user.email
-        ?.split("@")[0] ||
-
-      "Viky User";
-
-
-    $$("body *")
-      .forEach(
-        (element) => {
-
-          if (
-            element.children.length ===
-              0 &&
-
-            element.textContent.trim() ===
-              "Viky User"
-          ) {
-
-            element.textContent =
-              userName;
-          }
         }
-      );
 
 
-  } catch (error) {
+        showAuthMessage(
+          message,
+          true
+        );
 
-    console.error(
-      "Could not load user:",
-      error
-    );
-  }
+
+      } finally {
+
+        authButton.disabled =
+          false;
+
+      }
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     FORGOT PASSWORD
+     ------------------------------------------------------- */
+
+  forgotPassword?.addEventListener(
+    "click",
+    async (event) => {
+
+      event.preventDefault();
+
+
+      if (!supabaseClient) {
+
+        showAuthMessage(
+          "Supabase connection is not available.",
+          true
+        );
+
+        return;
+      }
+
+
+      const email =
+        ($("#authEmail")?.value || "")
+          .trim()
+          .toLowerCase();
+
+
+      if (!email) {
+
+        showAuthMessage(
+          "Enter your email first.",
+          true
+        );
+
+        return;
+      }
+
+
+      try {
+
+        showAuthMessage(
+          "Sending password reset email..."
+        );
+
+
+        const {
+          error
+        } =
+          await supabaseClient.auth
+            .resetPasswordForEmail(
+              email,
+              {
+                redirectTo:
+                  window.location.origin
+              }
+            );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        showAuthMessage(
+          "Password reset email sent."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Password reset error:",
+          error
+        );
+
+
+        showAuthMessage(
+          error?.message ||
+          "Unable to send password reset email.",
+          true
+        );
+
+      }
+
+    }
+  );
+
 }
 
 
@@ -698,20 +805,16 @@ async function checkLogin() {
       data,
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .getSession();
 
 
     if (error) {
-
       throw error;
     }
 
 
-    if (
-      data?.session?.user
-    ) {
+    if (data?.session) {
 
       currentUser =
         data.session.user;
@@ -724,6 +827,7 @@ async function checkLogin() {
     } else {
 
       showLogin();
+
     }
 
 
@@ -736,7 +840,9 @@ async function checkLogin() {
 
 
     showLogin();
+
   }
+
 }
 
 
@@ -744,40 +850,35 @@ async function checkLogin() {
    AUTH STATE CHANGE
    ========================================================= */
 
-function bindAuthState() {
+function setupAuthStateListener() {
 
   if (!supabaseClient) {
-
     return;
   }
 
 
-  supabaseClient
-    .auth
+  supabaseClient.auth
     .onAuthStateChange(
-      (
-        event,
-        session
-      ) => {
+      (event, session) => {
 
-        if (
-          session?.user
-        ) {
+        if (session) {
 
           currentUser =
             session.user;
 
 
+          showApp();
+
+
           setTimeout(
             () => {
-
-              showApp();
 
               checkAdminAccess();
 
             },
             0
           );
+
 
         } else {
 
@@ -790,9 +891,12 @@ function bindAuthState() {
           hideAdminNav();
 
           showLogin();
+
         }
+
       }
     );
+
 }
 
 
@@ -804,6 +908,14 @@ async function logout() {
 
   if (!supabaseClient) {
 
+    currentUser =
+      null;
+
+    isAdmin =
+      false;
+
+    showLogin();
+
     return;
   }
 
@@ -813,13 +925,11 @@ async function logout() {
     const {
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .signOut();
 
 
     if (error) {
-
       throw error;
     }
 
@@ -835,10 +945,6 @@ async function logout() {
 
     showLogin();
 
-    showAuthMessage(
-      "Logged out."
-    );
-
 
   } catch (error) {
 
@@ -848,184 +954,18 @@ async function logout() {
     );
 
 
-    showAuthMessage(
+    alert(
       error?.message ||
-      "Logout failed.",
-      true
+      "Logout failed."
     );
+
   }
+
 }
 
 
 window.logout =
   logout;
-
-
-/* =========================================================
-   ADMIN ACCESS
-   ========================================================= */
-
-async function checkAdminAccess() {
-
-  if (
-    !supabaseClient ||
-    !currentUser
-  ) {
-
-    isAdmin =
-      false;
-
-    hideAdminNav();
-
-    return;
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .getUser();
-
-
-    if (error) {
-
-      throw error;
-    }
-
-
-    const user =
-      data?.user;
-
-
-    if (!user) {
-
-      currentUser =
-        null;
-
-      isAdmin =
-        false;
-
-      hideAdminNav();
-
-      return;
-    }
-
-
-    currentUser =
-      user;
-
-
-    /* =====================================================
-       ADMIN EMAIL
-       ===================================================== */
-
-    isAdmin =
-      (
-        user.email ||
-        ""
-      )
-        .toLowerCase() ===
-      ADMIN_EMAIL
-        .toLowerCase();
-
-
-    /* =====================================================
-       OPTIONAL USER ROLE
-       ===================================================== */
-
-    try {
-
-      const {
-        data: roleRow,
-        error: roleError
-      } =
-        await supabaseClient
-          .from("user_roles")
-          .select("role")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle();
-
-
-      if (
-        !roleError &&
-        roleRow?.role ===
-          "admin"
-      ) {
-
-        isAdmin =
-          true;
-      }
-
-    } catch (_) {
-
-      /*
-        user_roles table is optional.
-        Admin email still works.
-      */
-    }
-
-
-    /* =====================================================
-       ADMIN UI
-       ===================================================== */
-
-    if (isAdmin) {
-
-      $("#adminNav")
-        ?.classList
-        .remove("hidden");
-
-
-      if ($("#adminRole")) {
-
-        $("#adminRole")
-          .textContent =
-          "admin";
-      }
-
-
-      if ($("#adminStatus")) {
-
-        $("#adminStatus")
-          .textContent =
-          "✓ Authorized";
-      }
-
-
-      if ($("#adminEmail")) {
-
-        $("#adminEmail")
-          .textContent =
-          user.email ||
-          "—";
-      }
-
-
-    } else {
-
-      hideAdminNav();
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "Admin access check error:",
-      error
-    );
-
-
-    hideAdminNav();
-  }
-}
 
 
 /* =========================================================
@@ -1035,16 +975,7 @@ async function checkAdminAccess() {
 function setMode(newMode) {
 
   mode =
-    [
-      "female",
-      "male",
-      "young",
-      "narrator"
-    ].includes(newMode)
-
-      ? "voice"
-
-      : newMode;
+    newMode;
 
 
   $$(".mode")
@@ -1054,23 +985,23 @@ function setMode(newMode) {
         element.classList.toggle(
           "active",
           element.dataset.mode ===
-            newMode
+          newMode
         );
+
       }
     );
 
 
-  $$(
-    ".sidebar a[data-mode]"
-  )
+  $$(".sidebar a[data-mode]")
     .forEach(
       (element) => {
 
         element.classList.toggle(
           "active",
           element.dataset.mode ===
-            newMode
+          newMode
         );
+
       }
     );
 
@@ -1078,18 +1009,14 @@ function setMode(newMode) {
   const upload =
     $("#uploadLabel");
 
+  const uploadTitle =
+    $("#uploadTitle");
 
   const input =
     $("#mediaInput");
 
-
-  const uploadTitle =
-    $("#uploadTitle");
-
-
   const voicePanel =
     $("#voicePanel");
-
 
   const promptBox =
     $("#prompt");
@@ -1100,7 +1027,9 @@ function setMode(newMode) {
       "image",
       "textimage",
       "video"
-    ].includes(mode);
+    ].includes(
+      newMode
+    );
 
 
   upload?.classList.toggle(
@@ -1112,61 +1041,111 @@ function setMode(newMode) {
   if (uploadTitle) {
 
     uploadTitle.textContent =
-      mode === "video"
+      newMode === "video"
         ? "Upload Video"
         : "Upload Image";
+
   }
 
 
   if (input) {
 
     input.accept =
-      mode === "video"
+      newMode === "video"
         ? "video/*"
         : "image/*";
+
   }
 
 
   voicePanel?.classList.toggle(
     "hidden",
-    mode !== "voice"
+    newMode !== "voice"
   );
 
 
-  const placeholders = {
-
-    voice:
-      "Write your script here. Example: Welcome to Viky AI...",
-
-    image:
-      "Describe the motion: camera slowly moves forward...",
-
-    textimage:
-      "Describe what should happen to the uploaded image...",
-
-    music:
-      "Describe the music you want...",
-
-    soundfx:
-      "Describe the sound effects...",
-
-    subtitle:
-      "Paste your video/script text...",
-
-    thumbnail:
-      "Describe the thumbnail scene...",
-
-    story:
-      "Describe your story..."
-  };
+  const specialModes =
+    [
+      "music",
+      "soundfx",
+      "subtitle",
+      "thumbnail",
+      "story"
+    ];
 
 
-  if (promptBox) {
+  if (
+    specialModes.includes(
+      newMode
+    )
+  ) {
+
+    voicePanel?.classList.add(
+      "hidden"
+    );
+
+
+    if (promptBox) {
+
+      const placeholders = {
+
+        music:
+          "Describe the music you want...",
+
+        soundfx:
+          "Describe the sound effects...",
+
+        subtitle:
+          "Paste your video/script text...",
+
+        thumbnail:
+          "Describe the thumbnail scene...",
+
+        story:
+          "Describe your story..."
+
+      };
+
+
+      promptBox.placeholder =
+        placeholders[newMode];
+
+    }
+
+  }
+
+
+  if (!promptBox) {
+    return;
+  }
+
+
+  if (newMode === "voice") {
 
     promptBox.placeholder =
-      placeholders[mode] ||
+      "Write your script here. Example: Welcome to Viky AI...";
+
+  } else if (newMode === "image") {
+
+    promptBox.placeholder =
+      "Describe the motion: camera slowly moves forward...";
+
+  } else if (newMode === "textimage") {
+
+    promptBox.placeholder =
+      "Describe what should happen to the uploaded image...";
+
+  } else if (
+    !specialModes.includes(
+      newMode
+    )
+  ) {
+
+    promptBox.placeholder =
       "A cinematic scene with realistic movement...";
+
   }
+
 }
 
 
@@ -1189,11 +1168,12 @@ function showDashboard() {
   $(".content")
     ?.classList
     .remove("hidden");
+
 }
 
 
 /* =========================================================
-   ACCOUNT PAGE
+   ACCOUNT
    ========================================================= */
 
 function showAccount(page) {
@@ -1226,6 +1206,7 @@ function showAccount(page) {
         )
           ?.classList
           .add("hidden");
+
       }
     );
 
@@ -1244,11 +1225,11 @@ function showAccount(page) {
   if (title) {
 
     title.textContent =
-      page
-        .charAt(0)
-        .toUpperCase() +
+      page.charAt(0).toUpperCase() +
       page.slice(1);
+
   }
+
 }
 
 
@@ -1288,6 +1269,7 @@ function showAdminPage() {
     $("#adminRole")
       .textContent =
       "admin";
+
   }
 
 
@@ -1296,6 +1278,7 @@ function showAdminPage() {
     $("#adminStatus")
       .textContent =
       "✓ Authorized";
+
   }
 
 
@@ -1305,7 +1288,9 @@ function showAdminPage() {
       .textContent =
       currentUser?.email ||
       "—";
+
   }
+
 }
 
 
@@ -1320,6 +1305,7 @@ function scrollToPricing() {
       behavior:
         "smooth"
     });
+
 }
 
 
@@ -1336,6 +1322,7 @@ function buy(plan) {
   alert(
     `${plan} selected. Payment gateway will be connected in the backend step.`
   );
+
 }
 
 
@@ -1344,396 +1331,228 @@ window.buy =
 
 
 /* =========================================================
-   GENERATE
+   DASHBOARD SETUP
    ========================================================= */
 
-function generate() {
+function setupDashboard() {
 
   const promptBox =
     $("#prompt");
 
+  const counter =
+    $("#counter");
 
   const input =
     $("#mediaInput");
 
+  const moreTools =
+    $("#moreTools");
 
-  const button =
-    $("#generate");
-
-
-  const list =
-    $("#recentList");
+  const moreMenu =
+    $("#moreMenu");
 
 
-  const cost =
-    mode === "voice"
-      ? 10
+  /* -------------------------------------------------------
+     PROMPT COUNTER
+     ------------------------------------------------------- */
 
-      : mode === "music"
-      ? 8
-
-      : mode === "soundfx"
-      ? 5
-
-      : mode === "subtitle"
-      ? 5
-
-      : mode === "thumbnail"
-      ? 5
-
-      : 20;
-
-
-  if (credits < cost) {
-
-    alert(
-      `Not enough credits. This action needs ${cost} credits.`
-    );
-
-
-    scrollToPricing();
-
-    return;
-  }
-
-
-  if (
-    [
-      "image",
-      "textimage",
-      "video"
-    ].includes(mode) &&
-    !input?.files?.length
-  ) {
-
-    alert(
-      "Please upload the required image/video first."
-    );
-
-    return;
-  }
-
-
-  if (
-    !promptBox?.value.trim()
-  ) {
-
-    alert(
-      mode === "voice"
-        ? "Please enter your voice-over script."
-        : "Please enter a prompt."
-    );
-
-    return;
-  }
-
-
-  credits -=
-    cost;
-
-
-  if ($("#creditCount")) {
-
-    $("#creditCount")
-      .textContent =
-      credits;
-  }
-
-
-  if (!button) {
-
-    return;
-  }
-
-
-  button.disabled =
-    true;
-
-
-  button.innerHTML =
-    mode === "voice"
-
-      ? "⏳ CREATING VOICE…"
-
-      : "⏳ GENERATING VIDEO…";
-
-
-  setTimeout(
+  promptBox?.addEventListener(
+    "input",
     () => {
 
-      button.disabled =
-        false;
+      if (counter) {
 
+        counter.textContent =
+          `${promptBox.value.length} / 2000`;
 
-      button.innerHTML =
-        `⚡ GENERATE ${
-          mode === "voice"
-            ? "VOICE"
-            : "VIDEO"
-        } <span>${cost} credits</span>`;
-
-
-      if (!list) {
-
-        return;
       }
 
-
-      list
-        .querySelector(
-          ".empty"
-        )
-        ?.remove();
-
-
-      const item =
-        document.createElement(
-          "div"
-        );
-
-
-      item.className =
-        "video-item";
-
-
-      const labels = {
-
-        voice:
-          "AI Voice Over",
-
-        music:
-          "AI Music",
-
-        soundfx:
-          "Sound Effects",
-
-        subtitle:
-          "AI Subtitles",
-
-        thumbnail:
-          "AI Thumbnail",
-
-        story:
-          "AI Story Video"
-      };
-
-
-      item.innerHTML =
-        `
-        <div class="thumb"></div>
-
-        <div>
-          <b>
-            ${
-              labels[mode] ||
-              "AI Video"
-            }
-          </b>
-
-          <small>
-            ✓ Demo complete • ${cost} credits
-          </small>
-        </div>
-        `;
-
-
-      list.prepend(
-        item
-      );
-
-    },
-    1800
+    }
   );
-}
 
 
-/* =========================================================
-   ADMIN MESSAGE
-   ========================================================= */
-
-function showAdminMessage(
-  message
-) {
-
-  const box =
-    $("#adminMessage");
-
-
-  if (!box) {
-
-    return;
-  }
-
-
-  box.style.display =
-    "block";
-
-
-  box.textContent =
-    message;
-}
-
-
-/* =========================================================
-   BIND ALL EVENTS
-   ========================================================= */
-
-function bindEvents() {
-
-  /* =======================================================
-     AUTH SWITCH
-     ======================================================= */
-
-  $("#authSwitch")
-    ?.addEventListener(
-      "click",
-      () => {
-
-        setSignupMode(
-          !signupMode
-        );
-      }
-    );
-
-
-  /* =======================================================
-     AUTH BUTTON
-     ======================================================= */
-
-  $("#authButton")
-    ?.addEventListener(
-      "click",
-      handleAuth
-    );
-
-
-  /* =======================================================
-     FORGOT PASSWORD
-     ======================================================= */
-
-  $("#forgotPassword")
-    ?.addEventListener(
-      "click",
-      resetPassword
-    );
-
-
-  /* =======================================================
-     GENERATE
-     ======================================================= */
-
-  $("#generate")
-    ?.addEventListener(
-      "click",
-      generate
-    );
-
-
-  /* =======================================================
-     BACK DASHBOARD
-     ======================================================= */
-
-  $("#backDashboard")
-    ?.addEventListener(
-      "click",
-      showDashboard
-    );
-
-
-  /* =======================================================
-     BACK ADMIN
-     ======================================================= */
-
-  $("#backFromAdmin")
-    ?.addEventListener(
-      "click",
-      showDashboard
-    );
-
-
-  /* =======================================================
-     UPLOAD
-     ======================================================= */
-
-  const upload =
-    $("#uploadLabel");
-
-
-  const input =
-    $("#mediaInput");
-
-
-  upload
-    ?.addEventListener(
-      "click",
-      (event) => {
-
-        if (
-          input &&
-          event.target !==
-            input
-        ) {
-
-          event.preventDefault();
-
-          input.click();
-        }
-      }
-    );
-
-
-  input
-    ?.addEventListener(
-      "change",
-      () => {
-
-        if (
-          input.files &&
-          input.files[0]
-        ) {
-
-          const small =
-            upload?.querySelector(
-              "small"
-            );
-
-
-          if (small) {
-
-            small.textContent =
-              `Selected: ${input.files[0].name}`;
-          }
-        }
-      }
-    );
-
-
-  /* =======================================================
+  /* -------------------------------------------------------
      MODE BUTTONS
-     ======================================================= */
+     ------------------------------------------------------- */
 
-  $$(
-    ".mode, .sidebar a[data-mode]"
-  )
+  $$(".mode, .sidebar a[data-mode]")
     .forEach(
       (element) => {
 
         element.addEventListener(
           "click",
-          () => {
+          (event) => {
 
-            setMode(
-              element.dataset.mode
-            );
+            event.preventDefault();
+
+
+            const selectedMode =
+              element.dataset.mode;
+
+
+            if (
+              [
+                "female",
+                "male",
+                "young",
+                "narrator"
+              ].includes(
+                selectedMode
+              )
+            ) {
+
+              setMode(
+                "voice"
+              );
+
+            } else if (
+              selectedMode
+            ) {
+
+              setMode(
+                selectedMode
+              );
+
+            }
+
+
+            if (moreMenu) {
+
+              moreMenu
+                .classList
+                .add("hidden");
+
+            }
+
           }
         );
+
       }
     );
 
 
-  /* =======================================================
-     CHOICE BUTTONS
-     ======================================================= */
+  /* -------------------------------------------------------
+     MORE MENU
+     ------------------------------------------------------- */
+
+  moreTools?.addEventListener(
+    "click",
+    (event) => {
+
+      event.preventDefault();
+
+
+      moreMenu
+        ?.classList
+        .toggle("hidden");
+
+
+      const button =
+        moreTools
+          ?.querySelector("b");
+
+
+      if (button) {
+
+        button.textContent =
+          moreMenu?.classList
+            .contains("hidden")
+            ? "⌄"
+            : "⌃";
+
+      }
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     ACCOUNT / ADMIN NAVIGATION
+     ------------------------------------------------------- */
+
+  $$("[data-page]")
+    .forEach(
+      (element) => {
+
+        element.addEventListener(
+          "click",
+          (event) => {
+
+            event.preventDefault();
+
+
+            const page =
+              element.dataset.page;
+
+
+            if (page === "dashboard") {
+
+              showDashboard();
+
+              return;
+            }
+
+
+            if (page === "admin") {
+
+              showAdminPage();
+
+              return;
+            }
+
+
+            if (page) {
+
+              showAccount(
+                page
+              );
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+
+  /* -------------------------------------------------------
+     BACK DASHBOARD
+     ------------------------------------------------------- */
+
+  $("#backDashboard")
+    ?.addEventListener(
+      "click",
+      (event) => {
+
+        event.preventDefault();
+
+        showDashboard();
+
+      }
+    );
+
+
+  /* -------------------------------------------------------
+     BACK ADMIN
+     ------------------------------------------------------- */
+
+  $("#backFromAdmin")
+    ?.addEventListener(
+      "click",
+      (event) => {
+
+        event.preventDefault();
+
+        showDashboard();
+
+      }
+    );
+
+
+  /* -------------------------------------------------------
+     CHOICES
+     ------------------------------------------------------- */
 
   $$(".choices button")
     .forEach(
@@ -1743,8 +1562,7 @@ function bindEvents() {
           "click",
           () => {
 
-            button
-              .parentElement
+            button.parentElement
               ?.querySelectorAll(
                 "button"
               )
@@ -1755,6 +1573,7 @@ function bindEvents() {
                     .remove(
                       "selected"
                     );
+
                 }
               );
 
@@ -1763,15 +1582,17 @@ function bindEvents() {
               .add(
                 "selected"
               );
+
           }
         );
+
       }
     );
 
 
-  /* =======================================================
+  /* -------------------------------------------------------
      VOICE CHOICES
-     ======================================================= */
+     ------------------------------------------------------- */
 
   $$(".voice-choice")
     .forEach(
@@ -1789,6 +1610,7 @@ function bindEvents() {
                     .remove(
                       "selected"
                     );
+
                 }
               );
 
@@ -1797,182 +1619,343 @@ function bindEvents() {
               .add(
                 "selected"
               );
+
           }
         );
+
       }
     );
 
 
-  /* =======================================================
-     MORE MENU
-     ======================================================= */
+  /* -------------------------------------------------------
+     FILE UPLOAD
+     ------------------------------------------------------- */
 
-  $("#moreTools")
+  input?.addEventListener(
+    "change",
+    () => {
+
+      if (
+        input.files &&
+        input.files[0]
+      ) {
+
+        const small =
+          $("#uploadLabel")
+            ?.querySelector(
+              "small"
+            );
+
+
+        if (small) {
+
+          small.textContent =
+            `Selected: ${input.files[0].name}`;
+
+        }
+
+      }
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     GENERATE
+     ------------------------------------------------------- */
+
+  $("#generate")
     ?.addEventListener(
       "click",
-      () => {
+      (event) => {
 
-        const menu =
-          $("#moreMenu");
+        event.preventDefault();
 
 
-        menu
-          ?.classList
-          .toggle(
-            "hidden"
+        const cost =
+          mode === "voice"
+            ? 10
+            : mode === "music"
+            ? 8
+            : mode === "soundfx"
+            ? 5
+            : mode === "subtitle"
+            ? 5
+            : mode === "thumbnail"
+            ? 5
+            : 20;
+
+
+        if (credits < cost) {
+
+          alert(
+            `Not enough credits. This action needs ${cost} credits.`
           );
 
 
-        const button =
-          $("#moreTools b");
+          scrollToPricing();
 
-
-        if (button) {
-
-          button.textContent =
-            menu?.classList.contains(
-              "hidden"
-            )
-
-              ? "⌄"
-
-              : "⌃";
+          return;
         }
-      }
-    );
 
 
-  /* =======================================================
-     ACCOUNT / ADMIN NAV
-     ======================================================= */
+        if (
+          [
+            "image",
+            "textimage",
+            "video"
+          ].includes(
+            mode
+          ) &&
+          !input?.files?.length
+        ) {
 
-  $$("[data-page]")
-    .forEach(
-      (element) => {
+          alert(
+            "Please upload the required image/video first."
+          );
 
-        element.addEventListener(
-          "click",
+          return;
+        }
+
+
+        if (
+          !promptBox?.value.trim()
+        ) {
+
+          alert(
+            mode === "voice"
+              ? "Please enter your voice-over script."
+              : "Please enter a prompt."
+          );
+
+          return;
+        }
+
+
+        credits -= cost;
+
+
+        if ($("#creditCount")) {
+
+          $("#creditCount")
+            .textContent =
+            credits;
+
+        }
+
+
+        const button =
+          $("#generate");
+
+
+        if (!button) {
+          return;
+        }
+
+
+        button.disabled =
+          true;
+
+
+        button.innerHTML =
+          mode === "voice"
+            ? "⏳ CREATING VOICE…"
+            : "⏳ GENERATING VIDEO…";
+
+
+        setTimeout(
           () => {
 
-            const page =
-              element.dataset.page;
+            button.disabled =
+              false;
 
 
-            if (
-              page ===
-              "dashboard"
-            ) {
+            button.innerHTML =
+              `⚡ GENERATE ${
+                mode === "voice"
+                  ? "VOICE"
+                  : "VIDEO"
+              } <span>${cost} credits</span>`;
 
-              showDashboard();
 
+            const list =
+              $("#recentList");
+
+
+            if (!list) {
               return;
             }
 
 
-            if (
-              page ===
-              "admin"
-            ) {
-
-              showAdminPage();
-
-              return;
-            }
+            list
+              .querySelector(
+                ".empty"
+              )
+              ?.remove();
 
 
-            showAccount(
-              page
+            const item =
+              document.createElement(
+                "div"
+              );
+
+
+            item.className =
+              "video-item";
+
+
+            const label =
+              mode === "voice"
+                ? "AI Voice Over"
+                : mode === "music"
+                ? "AI Music"
+                : mode === "soundfx"
+                ? "Sound Effects"
+                : mode === "subtitle"
+                ? "AI Subtitles"
+                : mode === "thumbnail"
+                ? "AI Thumbnail"
+                : mode === "story"
+                ? "AI Story Video"
+                : "AI Video";
+
+
+            item.innerHTML = `
+              <div class="thumb"></div>
+              <div>
+                <b>${label}</b>
+                <small>✓ Demo complete • ${cost} credits</small>
+              </div>
+            `;
+
+
+            list.prepend(
+              item
             );
-          }
+
+          },
+          1800
         );
+
       }
     );
 
 
-  /* =======================================================
+  /* -------------------------------------------------------
      ADMIN USERS
-     ======================================================= */
+     ------------------------------------------------------- */
 
   $("#adminUsersBtn")
     ?.addEventListener(
       "click",
       () => {
 
-        showAdminMessage(
-          "User management needs a secure backend/Edge Function. Never expose the Supabase service_role key in frontend code."
-        );
+        const box =
+          $("#adminMessage");
+
+
+        if (!box) {
+          return;
+        }
+
+
+        box.style.display =
+          "block";
+
+
+        box.textContent =
+          "User management needs a secure backend/Edge Function. Never expose the Supabase service_role key in frontend code.";
+
       }
     );
 
 
-  /* =======================================================
+  /* -------------------------------------------------------
      ADMIN CREDITS
-     ======================================================= */
+     ------------------------------------------------------- */
 
   $("#adminCreditsBtn")
     ?.addEventListener(
       "click",
       () => {
 
-        showAdminMessage(
-          "Credits management is ready for the backend step."
-        );
+        const box =
+          $("#adminMessage");
+
+
+        if (!box) {
+          return;
+        }
+
+
+        box.style.display =
+          "block";
+
+
+        box.textContent =
+          "Credits management needs a secure backend/Edge Function.";
+
       }
     );
 
 
-  /* =======================================================
+  /* -------------------------------------------------------
      ADMIN VIDEOS
-     ======================================================= */
+     ------------------------------------------------------- */
 
   $("#adminVideosBtn")
     ?.addEventListener(
       "click",
       () => {
 
-        showAdminMessage(
-          "Video management is ready for the backend step."
-        );
+        const box =
+          $("#adminMessage");
+
+
+        if (!box) {
+          return;
+        }
+
+
+        box.style.display =
+          "block";
+
+
+        box.textContent =
+          "Video management needs a secure backend/Edge Function.";
+
       }
     );
 
 
-  /* =======================================================
+  /* -------------------------------------------------------
      ADMIN SETTINGS
-     ======================================================= */
+     ------------------------------------------------------- */
 
   $("#adminSettingsBtn")
     ?.addEventListener(
       "click",
       () => {
 
-        showAdminMessage(
-          "Admin settings are ready for the backend step."
-        );
-      }
-    );
+        const box =
+          $("#adminMessage");
 
 
-  /* =======================================================
-     PROMPT COUNTER
-     ======================================================= */
-
-  $("#prompt")
-    ?.addEventListener(
-      "input",
-      () => {
-
-        const counter =
-          $("#counter");
-
-
-        if (counter) {
-
-          counter.textContent =
-            `${$("#prompt").value.length} / 2000`;
+        if (!box) {
+          return;
         }
+
+
+        box.style.display =
+          "block";
+
+
+        box.textContent =
+          "Admin settings need a secure backend/Edge Function.";
+
       }
     );
+
 }
 
 
@@ -1987,7 +1970,12 @@ async function initializeVikyAI() {
   );
 
 
-  if (!initSupabase()) {
+  if (!window.supabase) {
+
+    console.error(
+      "Supabase JavaScript library was not loaded. Make sure the Supabase CDN script is loaded before app.js."
+    );
+
 
     showLogin();
 
@@ -1995,18 +1983,49 @@ async function initializeVikyAI() {
   }
 
 
-  bindEvents();
+  if (
+    typeof window.supabase.createClient !==
+    "function"
+  ) {
 
-  bindAuthState();
+    console.error(
+      "Supabase createClient function is unavailable."
+    );
 
-  setSignupMode(
-    false
-  );
 
-  setMode(
-    "text"
-  );
+    showLogin();
 
+    return;
+  }
+
+
+  try {
+
+    supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+  } catch (error) {
+
+    console.error(
+      "Supabase client creation failed:",
+      error
+    );
+
+
+    showLogin();
+
+    return;
+  }
+
+
+  setupAuth();
+
+  setupDashboard();
+
+  setupAuthStateListener();
 
   await checkLogin();
 
@@ -2014,6 +2033,7 @@ async function initializeVikyAI() {
   console.log(
     "Viky AI initialized."
   );
+
 }
 
 
@@ -2028,10 +2048,14 @@ if (
 
   document.addEventListener(
     "DOMContentLoaded",
-    initializeVikyAI
+    initializeVikyAI,
+    {
+      once: true
+    }
   );
 
 } else {
 
   initializeVikyAI();
+
 }
