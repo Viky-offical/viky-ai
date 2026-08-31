@@ -713,3 +713,76 @@ footer{padding:30px;color:#4f5e70;text-align:center;font-size:11px}
   .user-header-info{min-width:auto}
   .advanced{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   VIDEO DURATION ENGINE
+   ========================================================= */
+
+.duration-control{
+  grid-column:1 / -1;
+}
+
+.choices.duration{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+
+.choices.duration button{
+  min-width:68px;
+}
+
+.choices.duration button[data-duration-custom="true"]{
+  border-color:rgba(255,157,61,.45);
+  color:#ffb56d;
+}
+
+.choices.duration button[data-duration-custom="true"].selected{
+  border-color:var(--orange);
+  background:linear-gradient(110deg,rgba(255,157,61,.14),rgba(35,136,255,.12));
+  color:#fff;
+}
+
+.custom-duration{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid rgba(35,136,255,.22);
+  border-radius:12px;
+  background:rgba(35,136,255,.035);
+}
+
+.duration-input-row{
+  display:grid;
+  grid-template-columns:1fr 170px;
+  gap:8px;
+}
+
+.custom-duration input{
+  width:100%;
+  height:42px;
+  padding:0 11px;
+  border:1px solid #203246;
+  border-radius:10px;
+  outline:0;
+  background:#070d14;
+  color:#fff;
+}
+
+.custom-duration input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(35,136,255,.08);
+}
+
+.custom-duration small{
+  display:block;
+  margin-top:8px;
+  color:#6f7f92;
+  line-height:1.45;
+}
+
+@media(max-width:700px){
+  .duration-input-row{
+    grid-template-columns:1fr;
+  }
+}
