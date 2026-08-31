@@ -37,6 +37,133 @@ let mode = "text";
 
 let credits = 0;
 
+/* =========================================================
+   VIDEO DURATION ENGINE
+   - Supports presets from 4 seconds through 3 hours.
+   - Custom / Unlimited accepts any positive duration.
+   - Long videos are planned as smaller generation chunks.
+   ========================================================= */
+
+let selectedDurationSeconds = 8;
+const VEO_MAX_CLIP_SECONDS = 8;
+
+function formatDuration(totalSeconds) {
+  const seconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${secs}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  }
+  return `${secs}s`;
+}
+
+function getSelectedDurationSeconds() {
+  const customBox = $("#customDurationBox");
+
+  if (customBox && !customBox.classList.contains("hidden")) {
+    const value = Number($("#customDurationValue")?.value || 0);
+    const unit = $("#customDurationUnit")?.value || "minutes";
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+
+    const multiplier =
+      unit === "hours"
+        ? 3600
+        : unit === "minutes"
+        ? 60
+        : 1;
+
+    return Math.floor(value * multiplier);
+  }
+
+  return selectedDurationSeconds;
+}
+
+function updateDurationUI() {
+  const summary = $("#durationSummary");
+  const total = getSelectedDurationSeconds();
+
+  if (summary && total) {
+    const clips = Math.ceil(total / VEO_MAX_CLIP_SECONDS);
+    summary.textContent =
+      total <= VEO_MAX_CLIP_SECONDS
+        ? `Selected: ${formatDuration(total)}`
+        : `Selected: ${formatDuration(total)} • ${clips} generation chunks will be used automatically.`;
+  }
+}
+
+function setupDurationEngine() {
+  const choices = $("#durationChoices");
+  if (!choices) return;
+
+  choices.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      choices.querySelectorAll("button").forEach((item) => {
+        item.classList.remove("selected");
+      });
+
+      button.classList.add("selected");
+
+      const customBox = $("#customDurationBox");
+
+      if (button.dataset.durationCustom === "true") {
+        customBox?.classList.remove("hidden");
+        $("#customDurationValue")?.focus();
+      } else {
+        customBox?.classList.add("hidden");
+        const seconds = Number(button.dataset.durationSeconds);
+        if (Number.isFinite(seconds) && seconds > 0) {
+          selectedDurationSeconds = Math.floor(seconds);
+        }
+      }
+
+      updateDurationUI();
+    });
+  });
+
+  $("#customDurationValue")?.addEventListener("input", updateDurationUI);
+  $("#customDurationUnit")?.addEventListener("change", updateDurationUI);
+
+  updateDurationUI();
+}
+
+async function callGenerateVideo(prompt, durationSeconds, aspectRatio) {
+  if (!supabaseClient) {
+    throw new Error("Supabase is not connected.");
+  }
+
+  const { data, error } = await supabaseClient.functions.invoke(
+    "generate-video",
+    {
+      body: {
+        prompt,
+        durationSeconds,
+        aspectRatio,
+      },
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.success) {
+    throw new Error(data?.error || "Video generation failed.");
+  }
+
+  return data;
+}
+
+
 
 /* =========================================================
    HELPERS
@@ -3006,33 +3133,28 @@ function setupDashboard() {
 
 
   /*
-     GENERATE
+     GENERATE VIDEO
+     Real Supabase Edge Function request + duration engine.
   */
 
   $("#generate")
     ?.addEventListener(
       "click",
       async (event) => {
-
         event.preventDefault();
 
-
-        /*
-           Make sure user is logged in.
-        */
-
         if (!currentUser) {
-
-          alert(
-            "Please login first."
-          );
-
+          alert("Please login first.");
           showLogin();
-
           return;
-
         }
 
+        const durationSeconds = getSelectedDurationSeconds();
+
+        if (!durationSeconds || durationSeconds < 1) {
+          alert("Please enter a valid video duration.");
+          return;
+        }
 
         const cost =
           mode === "voice"
@@ -3047,220 +3169,120 @@ function setupDashboard() {
             ? 5
             : 20;
 
-
         /*
-           ADMIN = NO CREDIT LIMIT.
+          Long videos need multiple Veo generations.
+          Charge the base generation cost once here; the
+          backend can apply your final per-duration pricing later.
         */
-
-        if (
-          !isAdmin &&
-          credits < cost
-        ) {
-
-          alert(
-            `Not enough credits. This action needs ${cost} credits.`
-          );
-
+        if (!isAdmin && credits < cost) {
+          alert(`Not enough credits. This action needs ${cost} credits.`);
           scrollToPricing();
-
           return;
-
         }
 
-
-        /*
-           Required media.
-        */
-
         if (
-          [
-            "image",
-            "textimage",
-            "video"
-          ].includes(mode) &&
+          ["image", "textimage", "video"].includes(mode) &&
           !input?.files?.length
         ) {
-
-          alert(
-            "Please upload the required image/video first."
-          );
-
+          alert("Please upload the required image/video first.");
           return;
-
         }
 
+        const promptText = promptBox?.value.trim();
 
-        /*
-           Required prompt.
-        */
-
-        if (
-          !promptBox?.value.trim()
-        ) {
-
+        if (!promptText) {
           alert(
             mode === "voice"
               ? "Please enter your voice-over script."
               : "Please enter a prompt."
           );
-
-          return;
-
-        }
-
-
-        /*
-           Deduct credits from normal user.
-        */
-
-        if (!isAdmin) {
-
-          credits -= cost;
-
-          credits =
-            Math.max(
-              0,
-              credits
-            );
-
-          updateCreditUI();
-
-
-          /*
-             Save immediately to Supabase.
-          */
-
-          const saved =
-            await saveUserCredits();
-
-
-          if (!saved) {
-
-            /*
-               If database save failed,
-               reload actual balance rather
-               than allowing fake local credits.
-            */
-
-            await loadUserProfile();
-
-            alert(
-              "Credits could not be saved. Please try again."
-            );
-
-            return;
-
-          }
-
-        } else {
-
-          credits = Infinity;
-
-          updateCreditUI();
-
-        }
-
-
-        const button =
-          $("#generate");
-
-
-        if (!button) {
           return;
         }
 
+        const ratioButton = document.querySelector(
+          ".choices.ratio button.selected"
+        );
+        const aspectRatio = ratioButton?.textContent?.trim() || "16:9";
+
+        const button = $("#generate");
+        if (!button) return;
 
         button.disabled = true;
 
+        const originalHTML = button.innerHTML;
+        const totalChunks = Math.ceil(
+          durationSeconds / VEO_MAX_CLIP_SECONDS
+        );
 
-        button.innerHTML =
-          mode === "voice"
-            ? "⏳ CREATING VOICE…"
-            : "⏳ GENERATING VIDEO…";
-
-
-        setTimeout(
-          () => {
-
-            button.disabled =
-              false;
-
-
-            button.innerHTML =
-              `⚡ GENERATE ${
-                mode === "voice"
-                  ? "VOICE"
-                  : "VIDEO"
-              } <span>${
-                isAdmin
-                  ? "∞ Unlimited"
-                  : `${cost} credits`
-              }</span>`;
-
-
+        try {
+          if (!isAdmin) {
+            credits = Math.max(0, credits - cost);
             updateCreditUI();
 
+            const saved = await saveUserCredits();
 
-            const list =
-              $("#recentList");
-
-
-            if (!list) {
-              return;
+            if (!saved) {
+              await loadUserProfile();
+              throw new Error(
+                "Credits could not be saved. Please try again."
+              );
             }
+          } else {
+            credits = Infinity;
+            updateCreditUI();
+          }
 
+          button.innerHTML =
+            totalChunks === 1
+              ? "⏳ GENERATING VIDEO…"
+              : `⏳ STARTING ${totalChunks} CLIPS…`;
 
-            list
-              .querySelector(".empty")
-              ?.remove();
+          /*
+            The backend receives the TOTAL requested duration.
+            It returns a generation job/operation plan. This keeps
+            the UI independent from Veo's per-clip limitation.
+          */
+          const result = await callGenerateVideo(
+            promptText,
+            durationSeconds,
+            aspectRatio
+          );
 
+          const list = $("#recentList");
+          list?.querySelector(".empty")?.remove();
 
-            const item =
-              document.createElement("div");
-
-
-            item.className =
-              "video-item";
-
-
-            const label =
-              mode === "voice"
-                ? "AI Voice Over"
-                : mode === "music"
-                ? "AI Music"
-                : mode === "soundfx"
-                ? "Sound Effects"
-                : mode === "subtitle"
-                ? "AI Subtitles"
-                : mode === "thumbnail"
-                ? "AI Thumbnail"
-                : mode === "story"
-                ? "AI Story Video"
-                : "AI Video";
-
-
+          if (list) {
+            const item = document.createElement("div");
+            item.className = "video-item";
             item.innerHTML = `
               <div class="thumb"></div>
               <div>
-                <b>${label}</b>
+                <b>AI Video • ${formatDuration(durationSeconds)}</b>
                 <small>
-                  ✓ Demo complete • ${
-                    isAdmin
-                      ? "Unlimited Credits"
-                      : `${cost} credits`
-                  }
+                  ⏳ Generation started • ${totalChunks} clip${totalChunks === 1 ? "" : "s"}
                 </small>
               </div>
             `;
-
-
             list.prepend(item);
+          }
 
+          alert(
+            `Video generation started for ${formatDuration(durationSeconds)}.\n\n` +
+            `The system will use ${totalChunks} Veo generation chunk${totalChunks === 1 ? "" : "s"}.`
+          );
 
-          },
-          1800
-        );
-
+          console.log("Viky AI generation job:", result);
+        } catch (error) {
+          console.error("Video generation error:", error);
+          alert(
+            error?.message ||
+            "Video generation failed. Please try again."
+          );
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHTML;
+          updateCreditUI();
+        }
       }
     );
 
