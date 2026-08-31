@@ -1,26 +1,28 @@
-# Viky AI — Frontend Prototype
+# Viky AI — real video generator
 
-## Included
-- Text to Video
-- Image to Video
-- Text + Image to Video
-- Video to Video
-- AI Story to Video UI
-- AI Voice Over UI
-- Voice characters: Female, Male, Young, Narrator
-- Voice languages: English, Urdu, Hindi, Arabic, Spanish
-- Voice styles: Natural, Friendly, Energetic, Calm, Dramatic
-- Video duration: 2s / 5s / 10s / 15s / 30s / 1min
-- 100 welcome credits
-- Video generation: 20 credits
-- Voice generation: 10 credits (prototype)
-- Plans: $3 / $6 / $10 monthly
-- Responsive Black + Blue + Green interface
+## What this adds
+- Real Google Veo 3.1 generation instead of the old demo timeout.
+- Text-to-video.
+- Image/video reference upload through the existing `viky-videos` private bucket.
+- Native Veo audio: dialogue, ambient sound and effects can be generated from the same prompt.
+- Secure server-side Gemini API key.
+- Secure atomic credit deduction through Supabase.
+- Generated MP4 saved into Supabase Storage.
+- Recent Videos card gets a playable video link.
 
-## Important
-This is still a frontend prototype. Buttons now have UI interactions, but actual AI generation, authentication, secure server-side credits, file storage and payment processing must be connected in the backend. Never expose private API keys in frontend code.
+## Important Veo limitation
+Veo 3.1 currently generates native clips of 4, 6 or 8 seconds. Video extension can add 7 seconds per extension and can reach up to 148 seconds for a Veo-generated video. It does NOT natively create 20-minute or unlimited-length videos in one request.
 
-Suggested voice allowances in pricing:
-- $3: 10 voice minutes/month
-- $6: 60 voice minutes/month
-- $10: 150 voice minutes/month
+## Install
+1. Run `setup.sql` in Supabase SQL Editor.
+2. In Supabase Edge Function Secrets add:
+   - GEMINI_API_KEY = your Gemini API key
+   - SUPABASE_SERVICE_ROLE_KEY = your Supabase service-role key
+3. Deploy:
+   - generate-video
+   - video-status
+4. In `index.html`, after your existing `app.js`, add:
+   `<script src="video-generator.js"></script>`
+5. Keep the Gemini key ONLY in Edge Function Secrets. Never put it in HTML/JS.
+
+The frontend already uses the project's publishable Supabase key; that key is safe to expose as a publishable client key. The service-role key and Gemini key must remain server-side.
