@@ -604,46 +604,40 @@
 
 
               <!-- DURATION -->
-
-              <div>
-
+              <div class="duration-control">
                 <label>
                   Duration
+                  <span class="muted">Choose clip or total video length</span>
                 </label>
 
-                <div class="choices duration">
-
-                  <button type="button">
-                    2 sec
-                  </button>
-
-                  <button
-                    class="selected"
-                    type="button"
-                  >
-                    5 sec
-                  </button>
-
-                  <button type="button">
-                    10 sec
-                  </button>
-
-                  <button type="button">
-                    15 sec
-                  </button>
-
-                  <button type="button">
-                    30 sec
-                  </button>
-
-                  <button type="button">
-                    1 min
-                  </button>
-
+                <div class="choices duration" id="durationChoices">
+                  <button type="button" data-duration-seconds="4">4 sec</button>
+                  <button type="button" data-duration-seconds="6">6 sec</button>
+                  <button type="button" data-duration-seconds="8" class="selected">8 sec</button>
+                  <button type="button" data-duration-seconds="10">10 sec</button>
+                  <button type="button" data-duration-seconds="60">1 min</button>
+                  <button type="button" data-duration-seconds="120">2 min</button>
+                  <button type="button" data-duration-seconds="300">5 min</button>
+                  <button type="button" data-duration-seconds="600">10 min</button>
+                  <button type="button" data-duration-seconds="1200">20 min</button>
+                  <button type="button" data-duration-seconds="3600">1 hour</button>
+                  <button type="button" data-duration-seconds="7200">2 hours</button>
+                  <button type="button" data-duration-seconds="10800">3 hours</button>
+                  <button type="button" data-duration-custom="true">Custom / Unlimited</button>
                 </div>
 
+                <div class="custom-duration hidden" id="customDurationBox">
+                  <div class="duration-input-row">
+                    <input id="customDurationValue" type="number" min="1" step="1" placeholder="Enter duration">
+                    <select id="customDurationUnit">
+                      <option value="seconds">Seconds</option>
+                      <option value="minutes" selected>Minutes</option>
+                      <option value="hours">Hours</option>
+                    </select>
+                  </div>
+                  <small id="durationSummary">Enter any duration. The system will split long videos into generation chunks automatically.</small>
+                </div>
               </div>
-
 
               <!-- ASPECT RATIO -->
 
